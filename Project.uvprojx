@@ -1444,6 +1444,21 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\stm32f4xx_it.h</FilePath>
             </File>
+            <File>
+              <FileName>adc_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\adc_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>create_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\create_task.h</FilePath>
+            </File>
+            <File>
+              <FileName>uart_cmd_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\uart_cmd_task.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1459,6 +1474,21 @@
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\stm32f4xx_it.c</FilePath>
             </File>
+            <File>
+              <FileName>create_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\create_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>adc_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\adc_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>uart_cmd_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\uart_cmd_task.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1473,6 +1503,16 @@
               <FileName>adc_dma.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\adc_dma.h</FilePath>
+            </File>
+            <File>
+              <FileName>cmd_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\cmd_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>cmd_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\cmd_uart.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -21,28 +21,19 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
+#include "uart_cmd_task.h"
+#include <string.h>
 
 extern TIM_HandleTypeDef htim6;
-/** @addtogroup STM32F4xx_HAL_Examples
-  * @{
-  */
+extern UART_HandleTypeDef huart2; 
+extern uint8_t uart_rcvByte;                              // 串口接收字节.
+extern uint8_t cmd_buf[CMD_BUFFER_SIZE];                  // 串口命令缓冲区.
 
-/** @addtogroup Templates
-  * @{
-  */
+extern TaskHandle_t getUartCmdTask_Handle( void );
 
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-
-/* Private function prototypes -----------------------------------------------*/
-/* Private functions ---------------------------------------------------------*/
-
-/******************************************************************************/
-/*            Cortex-M4 Processor Exceptions Handlers                         */
-/******************************************************************************/
-
+static uint8_t cmd_temp_buf[CMD_BUFFER_SIZE];             // 命令暂存缓冲区.
+static TickType_t last_rx_tick;                             
+/* ------------------------------------------------------------------ */
 
 void TIM6_DAC_IRQHandler( void )
 {
@@ -57,6 +48,74 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   }
 }
 
+
+void USART2_IRQHandler( void )
+{
+  HAL_UART_IRQHandler(&huart2);
+}
+
+void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )
+{
+  if ( huart->Instance == USART2 )
+  {
+    static uint8_t recv_count = 0;
+
+    /* 每个字节到来时都记录时间戳. */
+    TickType_t now = xTaskGetTickCountFromISR();
+    if ( recv_count > 0 && (now - last_rx_tick) > pdMS_TO_TICKS(100) )
+    {
+      /* 设计该超时机制主要为了解决第一次输入失败后，第二次输入无效问题. */
+      recv_count = 0;
+    }
+    last_rx_tick = now;
+
+    if ( recv_count > 0 && uart_rcvByte == '\n' && cmd_temp_buf[(recv_count - 1)] == '\r' )
+    {
+      if ( recv_count + 1 >= CMD_BUFFER_SIZE - 1 )  
+      {
+        /* 超限. */
+        recv_count = 0;
+        goto END;
+      }
+
+      /* 检测到结束标志 \r\n. */
+      cmd_temp_buf[recv_count++] = uart_rcvByte;
+
+      uint8_t len = recv_count - 2;
+
+      /* 将暂存缓冲区数据拷贝到命令缓冲区供任务处理. */
+      uint32_t basepri = taskENTER_CRITICAL_FROM_ISR();
+      memcpy(cmd_buf, cmd_temp_buf, len);
+      cmd_buf[len] = '\0';
+      taskEXIT_CRITICAL_FROM_ISR(basepri);
+
+      /* 从上位机收到一条命令. 通知串口命令处理任务. */
+      BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+      vTaskNotifyGiveFromISR(getUartCmdTask_Handle(), &xHigherPriorityTaskWoken);
+      portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+
+      recv_count = 0;
+    }
+    else 
+    {
+      /* 命令接收阶段. */
+      cmd_temp_buf[recv_count++] = uart_rcvByte;
+
+      if ( recv_count >= CMD_BUFFER_SIZE - 1 )
+      {
+        /* 命令超限. 覆盖原缓冲区. */
+        recv_count = 0;
+      }
+    }
+
+END:
+    /* 继续接收. */
+    HAL_UART_Receive_IT(huart, &uart_rcvByte, 1);
+  }
+}
+
+
+/* ------------------------------------------------------------------ */
 /**
   * @brief  This function handles NMI exception.
   * @param  None

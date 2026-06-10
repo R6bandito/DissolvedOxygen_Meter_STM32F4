@@ -104,7 +104,7 @@ void Cus_DMA_Init( void )
 void Cus_ADC_SampleStart( void )
 {
   /* 启动ADC-DMA传输. */
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)recvBuf, sizeof(recvBuf));
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t *)recvBuf, 2);
 }
 
 

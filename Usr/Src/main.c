@@ -18,6 +18,8 @@ int main( void )
 
 	printf("======================== System Start ========================\n");
 
+	systemInit_Run();
+
 	while(1)
 	{
 
