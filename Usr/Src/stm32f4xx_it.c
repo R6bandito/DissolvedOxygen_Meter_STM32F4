@@ -22,12 +22,15 @@
 #include "main.h"
 #include "stm32f4xx_it.h"
 #include "uart_cmd_task.h"
+#include "key.h"
 #include <string.h>
 
 extern TIM_HandleTypeDef htim6;
 extern UART_HandleTypeDef huart2; 
 extern uint8_t uart_rcvByte;                              // 串口接收字节.
 extern uint8_t cmd_buf[CMD_BUFFER_SIZE];                  // 串口命令缓冲区.
+extern volatile uint8_t g_zeroKey_Event;           // 零点校准按键事件到达.
+extern volatile uint8_t g_airKey_Event;            // 空气校准按键事件到达.
 
 extern TaskHandle_t getUartCmdTask_Handle( void );
 
@@ -45,6 +48,40 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
   if ( htim->Instance == TIM6 )
   {
     HAL_IncTick();
+  }
+}
+
+
+void EXTI4_IRQHandler( void )
+{
+  /* 零点校准. */
+  if ( __HAL_GPIO_EXTI_GET_IT(CALIB_ZERO_KEY_PIN) != RESET )
+  {
+    /* 先清中断标志. */
+    __HAL_GPIO_EXTI_CLEAR_IT(CALIB_ZERO_KEY_PIN);
+
+    /* 通知按键事件到达. */
+    g_zeroKey_Event = 1;
+    
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(getKeyTask_Handle(), &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  }
+}
+
+
+void EXTI3_IRQHandler( void )
+{
+  /* 空气校准. */
+  if ( __HAL_GPIO_EXTI_GET_IT(CALIB_AIR_KEY_PIN) != RESET )
+  {
+    __HAL_GPIO_EXTI_CLEAR_IT(CALIB_AIR_KEY_PIN);
+
+    g_airKey_Event = 1;
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    vTaskNotifyGiveFromISR(getKeyTask_Handle(), &xHigherPriorityTaskWoken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
 }
 

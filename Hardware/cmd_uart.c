@@ -1,10 +1,12 @@
 #include "cmd_uart.h"
+#include "semphr.h"
 #include <stdarg.h>
 #include <stdio.h>
 
 /* **************************** */
 uint8_t uart_rcvByte = 0;
 UART_HandleTypeDef huart2;
+SemaphoreHandle_t xMutexUart2;
 /* **************************** */
 
 
@@ -60,16 +62,21 @@ void Cus_UART_StartTransfer( void )
 
 void UART2_Printf( const char *format, ... )
 {
-  /* 该API为不可重入函数. 由于只在串口命令处理任务中进行使用，因此无线程保护，当前场景足够使用. */
-  char buffer[64];
-  va_list args;
-  va_start(args, format);
-  int len = vsnprintf(buffer, sizeof(buffer), format, args);
-  va_end(args);
-
-  if ( len > 0 )
+  /* 获取互斥量. */
+  if ( xSemaphoreTake(xMutexUart2, pdMS_TO_TICKS(1000)) == pdTRUE )
   {
-    HAL_UART_Transmit(&huart2, (const uint8_t *)buffer, len, 20);
+    char buffer[64];
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+  
+    if ( len > 0 )
+    {
+      HAL_UART_Transmit(&huart2, (const uint8_t *)buffer, len, 20);
+    }
+
+    xSemaphoreGive(xMutexUart2);
   }
 }
 

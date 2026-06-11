@@ -1459,6 +1459,11 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\uart_cmd_task.h</FilePath>
             </File>
+            <File>
+              <FileName>key_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\key_task.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1489,6 +1494,11 @@
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\uart_cmd_task.c</FilePath>
             </File>
+            <File>
+              <FileName>key_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\key_task.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1513,6 +1523,21 @@
               <FileName>cmd_uart.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\cmd_uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>do_data.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\do_data.h</FilePath>
+            </File>
+            <File>
+              <FileName>key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\key.c</FilePath>
+            </File>
+            <File>
+              <FileName>key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\key.h</FilePath>
             </File>
           </Files>
         </Group>

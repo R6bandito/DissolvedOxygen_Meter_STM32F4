@@ -1,4 +1,6 @@
 #include "adc_task.h"
+#include "do_data.h"
+#include "queue.h"
 #include <math.h>
 
 
@@ -42,7 +44,9 @@ typedef struct
 } calibParams_t;
 calibParams_t adc_calibParams;                      // 全局校准参数.
 
-
+/* 数据队列相关. */
+QueueHandle_t doDataQueue;
+doData_t doData;
 
 /* ***************************************** */
 
@@ -58,6 +62,8 @@ void cTask_ADC( void *parameter );
 /* 该任务使用平均滑动滤波定期更新采样数据. */
 void cTask_Update( void *parameter );
 
+
+void calib_defaultInit( void );
 void calib_zero( void );
 void calib_air( void );
 uint16_t get_ADC_O2( void );
@@ -182,12 +188,58 @@ void calib_air( void )
 }
 
 
+void calib_defaultInit( void )
+{
+  taskENTER_CRITICAL();
+  adc_calibParams.air_adc = CALIB_DEFAULT_AIR_ADC;
+  adc_calibParams.air_sat = CALIB_DEFAULT_AIR_SAT;
+  adc_calibParams.air_temp_c = CALIB_DEFAULT_AIR_TEMP;
+  adc_calibParams.zero_adc = CALIB_DEFAULT_ZERO_ADC;
+  taskEXIT_CRITICAL();
+}
+
+
 void cTask_ADC( void *parameter )
 {
-
+  
   while(1)
   {
-    pdMS_TO_TICKS(1);
+    /* 获取当前O2滤波后ADC采样值 与 当前温度值. */
+    uint16_t adc_o2 = get_ADC_O2();
+    float temp = ADC_temp_convert2C(get_ADC_Temp());
+
+    /* 查表获得当前温度下的饱和溶解氧值. */
+    int8_t index = (int8_t)(temp + 0.5f);
+    if ( index < 0 )    index = 0;
+    if ( index > 40 )   index = 40;
+    float current_sat_do = do_sat_table[index];
+
+    uint16_t zero, air_adc;
+    float air_sat;
+
+    taskENTER_CRITICAL();
+    zero = adc_calibParams.zero_adc;
+    air_adc = adc_calibParams.air_adc;
+    air_sat = adc_calibParams.air_sat;
+    taskEXIT_CRITICAL();
+
+    if ( air_adc <= zero ) air_adc = zero + 1;
+    if ( air_sat <= 0.0f ) air_sat = 9.08f; 
+
+    /* 计算未经温度补偿的测量浓度. */
+    float do_means = (adc_o2 - zero) * air_sat / (air_adc - zero);
+
+    /* 计算温度补偿后的最终浓度. */
+    float do_final = do_means * current_sat_do / air_sat;
+
+    if ( do_final < 0 )   do_final = 0;
+
+    doData.dissolved_oxygen = do_final;
+    doData.temperature = temp;
+    xQueueOverwrite(doDataQueue, &doData);
+
+    /* 每500ms周期更新一次. */
+    vTaskDelay(pdMS_TO_TICKS(500));
   }
 }
 

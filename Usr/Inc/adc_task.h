@@ -14,6 +14,13 @@
   #define NTC_R0                      (10000.0f)          // 热敏电阻25度时的阻值.
   #define NTC_B                       (3435.0f)           // B值.
   #define NTC_T0_K                    (273.15f + 25.0f)   // 25℃的开尔文温度.
+
+  /* 以下是全局校准参数的默认值. 系统初始化时就选用该值进行计算. */
+  /* 该值基于默认线性关系的浓度值给出. */
+  #define CALIB_DEFAULT_ZERO_ADC      (0)
+  #define CALIB_DEFAULT_AIR_ADC       (1860)               // 9.08mg/L 对应的 ADC值.
+  #define CALIB_DEFAULT_AIR_SAT       (9.08)               // 20度对应饱和溶解氧值.
+  #define CALIB_DEFAULT_AIR_TEMP      (20)                 // 假设校准温度 20℃.
 /* *************** Defins *************** */
 
 
@@ -26,6 +33,9 @@ void calib_zero( void );
 
 /* 空气校准. 用于串口处理任务中调用. */
 void calib_air( void );
+
+/* 提供一个默认校准参数. */
+void calib_defaultInit( void );
 
 /* 这两个API作为对外接口. 向外部输送经过滤波的最新ADC采集值. */
 uint16_t get_ADC_O2( void );

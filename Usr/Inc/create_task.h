@@ -15,6 +15,9 @@
 
   #define CUS_UART_CMD_TASK_DEEPTH              (128)
   #define CUS_UART_CMD_TASK_PRIO                (7)
+
+  #define CUS_KEY_TASK_DEEPTH                   (128)
+  #define CUS_KEY_TASK_PRIO                     (5)
 /* ********************* Defines ********************* */
 
 
@@ -25,6 +28,7 @@ void systemInit_Run( void );
 TaskHandle_t getADCTask_Handle( void );
 TaskHandle_t getUpdateTask_Handle( void );
 TaskHandle_t getUartCmdTask_Handle( void );
+TaskHandle_t getKeyTask_Handle( void );
 /* ********************************************* */
 
 #endif /* __C_TASK_H__ */
