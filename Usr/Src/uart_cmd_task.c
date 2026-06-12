@@ -18,7 +18,7 @@ const char *cmd_list[CMD_LIST_SIZE] =
   "HELP"                                         // 帮助(命令帮助页).
 };
 
-extern UART_HandleTypeDef huart2; 
+
 extern QueueHandle_t doDataQueue;
 
 /* Declare */

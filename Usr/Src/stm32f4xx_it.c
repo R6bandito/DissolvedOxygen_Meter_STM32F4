@@ -26,7 +26,7 @@
 #include <string.h>
 
 extern TIM_HandleTypeDef htim6;
-extern UART_HandleTypeDef huart2; 
+extern UART_HandleTypeDef huart_cmd; 
 extern uint8_t uart_rcvByte;                              // 串口接收字节.
 extern uint8_t cmd_buf[CMD_BUFFER_SIZE];                  // 串口命令缓冲区.
 extern volatile uint8_t g_zeroKey_Event;           // 零点校准按键事件到达.
@@ -88,7 +88,7 @@ void EXTI3_IRQHandler( void )
 
 void USART2_IRQHandler( void )
 {
-  HAL_UART_IRQHandler(&huart2);
+  HAL_UART_IRQHandler(&huart_cmd);
 }
 
 void HAL_UART_RxCpltCallback( UART_HandleTypeDef *huart )

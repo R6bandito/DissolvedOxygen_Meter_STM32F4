@@ -6,6 +6,8 @@
 #include "do_data.h"
 #include "key.h"
 #include "key_task.h"
+#include "mb_task.h"
+#include "mb.h"
 #include "semphr.h"
 
 
@@ -14,6 +16,7 @@ static TaskHandle_t ADC_taskHandle;
 static TaskHandle_t Update_taskHandle;
 static TaskHandle_t UartCmd_taskHandle;
 static TaskHandle_t Key_taskHandle;
+static TaskHandle_t Modbus_taskHandle;
 /* *************************************** */
 
 /* *************************************** */
@@ -24,6 +27,7 @@ TaskHandle_t getADCTask_Handle( void );
 TaskHandle_t getUpdateTask_Handle( void );
 TaskHandle_t getUartCmdTask_Handle( void );
 TaskHandle_t getKeyTask_Handle( void );
+TaskHandle_t getModbusTask_Handle( void );
 
 extern SemaphoreHandle_t xMutexUart2;
 extern QueueHandle_t doDataQueue;
@@ -60,6 +64,14 @@ static void createTask( void )
                                         NULL, 
                                         CUS_KEY_TASK_PRIO, 
                                         &Key_taskHandle );
+
+  BaseType_t pReturn_Modbus = xTaskCreate( cTask_Modbus, 
+                                           "modbus", 
+                                           CUS_MODBUS_TASK_DEEPTH, 
+                                           NULL, 
+                                           CUS_MODBUS_TASK_PRIO, 
+                                           &Modbus_taskHandle );
+  
   if ( pReturn_ADC != pdPASS )
   {
     for( ; ; );
@@ -76,6 +88,11 @@ static void createTask( void )
   }
 
   if ( pReturn_Key != pdPASS )
+  {
+    for( ; ; );
+  }
+
+  if ( pReturn_Modbus != pdPASS )
   {
     for( ; ; );
   }
@@ -152,5 +169,11 @@ TaskHandle_t getUartCmdTask_Handle( void )
 TaskHandle_t getKeyTask_Handle( void )
 {
   return Key_taskHandle;
+}
+
+
+TaskHandle_t getModbusTask_Handle( void )
+{
+  return Modbus_taskHandle;
 }
 

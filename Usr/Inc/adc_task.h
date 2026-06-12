@@ -37,6 +37,9 @@ void calib_air( void );
 /* 提供一个默认校准参数. */
 void calib_defaultInit( void );
 
+/* 该方法为同步函数供Modbus HoldingCB调用. 用于同步写入的校准参数. */
+void calib_sync( void );
+
 /* 这两个API作为对外接口. 向外部输送经过滤波的最新ADC采集值. */
 uint16_t get_ADC_O2( void );
 uint16_t get_ADC_Temp( void );

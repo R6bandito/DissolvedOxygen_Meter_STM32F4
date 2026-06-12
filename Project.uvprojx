@@ -314,7 +314,7 @@
           </ArmAdsMisc>
           <Cads>
             <interw>1</interw>
-            <Optim>2</Optim>
+            <Optim>4</Optim>
             <oTime>0</oTime>
             <SplitLS>0</SplitLS>
             <OneElfS>1</OneElfS>
@@ -338,9 +338,9 @@
             <v6Rtti>0</v6Rtti>
             <VariousControls>
               <MiscControls></MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F407xx</Define>
+              <Define>USE_HAL_DRIVER,STM32F407xx,NDEBUG</Define>
               <Undefine></Undefine>
-              <IncludePath>.\Core;.\Driver\BSP;.\Driver\HAL\Inc;.\Driver\HAL\Inc\Legacy;.\Driver\HAL;.\Hardware;.\Usr\Inc;.\STARTUP;.\RTE\RTOS;.\RTE\_Target_1</IncludePath>
+              <IncludePath>.\Core;.\Driver\BSP;.\Driver\HAL\Inc;.\Driver\HAL\Inc\Legacy;.\Driver\HAL;.\Hardware;.\Usr\Inc;.\STARTUP;.\RTE\RTOS;.\RTE\_Target_1;.\Driver\Modbus\include</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -1464,6 +1464,11 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\key_task.h</FilePath>
             </File>
+            <File>
+              <FileName>mb_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\mb_task.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1498,6 +1503,11 @@
               <FileName>key_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\key_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>mb_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\mb_task.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1538,6 +1548,26 @@
               <FileName>key.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\key.h</FilePath>
+            </File>
+            <File>
+              <FileName>mb_uart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\mb_uart.c</FilePath>
+            </File>
+            <File>
+              <FileName>mb_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\mb_uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>mb_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\mb_timer.c</FilePath>
+            </File>
+            <File>
+              <FileName>mb_timer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\mb_timer.h</FilePath>
             </File>
           </Files>
         </Group>
@@ -1683,6 +1713,171 @@
               <FileName>portmacro.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\RTE\RTOS\portmacro.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Modbus/port</GroupName>
+          <Files>
+            <File>
+              <FileName>portevent.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\port\portevent.c</FilePath>
+            </File>
+            <File>
+              <FileName>portserial.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\port\portserial.c</FilePath>
+            </File>
+            <File>
+              <FileName>porttimer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\port\porttimer.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Modbus/source</GroupName>
+          <Files>
+            <File>
+              <FileName>mbfunccoils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbfunccoils.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncdiag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbfuncdiag.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncdisc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbfuncdisc.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncfile.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbfuncfile.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncholding.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbfuncholding.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncinput.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbfuncinput.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbfuncother.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbfuncother.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbutils.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbutils.c</FilePath>
+            </File>
+            <File>
+              <FileName>mb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mb.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbascii.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbascii.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbcrc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbcrc.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbrtu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbrtu.c</FilePath>
+            </File>
+            <File>
+              <FileName>mbtcp.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\source\mbtcp.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Modbus/include</GroupName>
+          <Files>
+            <File>
+              <FileName>mb.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mb.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbconfig.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbconfig.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbframe.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbframe.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbfunc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbfunc.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbport.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbport.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbproto.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbproto.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbutils.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbutils.h</FilePath>
+            </File>
+            <File>
+              <FileName>port.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\port.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbascii.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbascii.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbcrc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbcrc.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbrtu.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbrtu.h</FilePath>
+            </File>
+            <File>
+              <FileName>mbtcp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\Modbus\include\mbtcp.h</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Modbus/cb_app</GroupName>
+          <Files>
+            <File>
+              <FileName>demo.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\Modbus\demo\demo.c</FilePath>
             </File>
           </Files>
         </Group>

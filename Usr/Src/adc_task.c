@@ -48,12 +48,14 @@ calibParams_t adc_calibParams;                      // 全局校准参数.
 QueueHandle_t doDataQueue;
 doData_t doData;
 
+/* Modbus 保持寄存器数组. */
+extern uint16_t REG_HOLD_BUF[6];
 /* ***************************************** */
 
 /* **************************************** */
 static void update_filter( adc_Filter_t *filter, uint16_t new_val );          // 平均滑动滤波更新.
 static uint16_t get_current_filter_average( adc_Filter_t *filter );           // 获取当前最新的滤波数据.
-static float ADC_temp_convert2C( uint16_t adc_val );                       // 将ADC模拟量转换为温度(摄氏度).
+static float ADC_temp_convert2C( uint16_t adc_val );                          // 将ADC模拟量转换为温度(摄氏度).
 /* **************************************** */
 
 /* **************************************** */
@@ -63,6 +65,7 @@ void cTask_ADC( void *parameter );
 void cTask_Update( void *parameter );
 
 
+void calib_sync( void );            
 void calib_defaultInit( void );
 void calib_zero( void );
 void calib_air( void );
@@ -161,6 +164,7 @@ void calib_zero( void )
 {
   /* 将零点命令时的滤波过后的ADC值存入校准参数结构体. */
   adc_calibParams.zero_adc = get_ADC_O2();
+  REG_HOLD_BUF[2] = adc_calibParams.zero_adc;
 }
 
 
@@ -184,6 +188,10 @@ void calib_air( void )
   adc_calibParams.air_adc = air_adc;
   adc_calibParams.air_sat = sat_do;
   adc_calibParams.air_temp_c = temp;
+
+  REG_HOLD_BUF[3] = adc_calibParams.air_adc;
+  REG_HOLD_BUF[4] = adc_calibParams.air_sat * 100;
+  REG_HOLD_BUF[5] = adc_calibParams.air_temp_c * 10;
   taskEXIT_CRITICAL();
 }
 
@@ -195,6 +203,23 @@ void calib_defaultInit( void )
   adc_calibParams.air_sat = CALIB_DEFAULT_AIR_SAT;
   adc_calibParams.air_temp_c = CALIB_DEFAULT_AIR_TEMP;
   adc_calibParams.zero_adc = CALIB_DEFAULT_ZERO_ADC;
+
+  REG_HOLD_BUF[2] = CALIB_DEFAULT_ZERO_ADC;
+  REG_HOLD_BUF[3] = CALIB_DEFAULT_AIR_ADC;
+  REG_HOLD_BUF[4] = CALIB_DEFAULT_AIR_SAT * 100;
+  REG_HOLD_BUF[5] = CALIB_DEFAULT_AIR_TEMP * 10;
+  taskEXIT_CRITICAL();
+}
+
+
+void calib_sync( void )
+{
+  taskENTER_CRITICAL();
+  adc_calibParams.zero_adc = REG_HOLD_BUF[2];
+  adc_calibParams.air_adc = REG_HOLD_BUF[3];
+  adc_calibParams.air_sat = REG_HOLD_BUF[4] / 100.0f;
+  adc_calibParams.air_temp_c = REG_HOLD_BUF[5] / 10.0f;
+
   taskEXIT_CRITICAL();
 }
 
@@ -234,9 +259,16 @@ void cTask_ADC( void *parameter )
 
     if ( do_final < 0 )   do_final = 0;
 
+    /* 转换后的新数据覆写入队列. */
     doData.dissolved_oxygen = do_final;
     doData.temperature = temp;
     xQueueOverwrite(doDataQueue, &doData);
+
+    /* 写入Modbus保持寄存器. */
+    taskENTER_CRITICAL();
+    REG_HOLD_BUF[0] = doData.dissolved_oxygen * 100;      // Modbus寄存器只接收整数.此处扩大100倍处理.
+    REG_HOLD_BUF[1] = doData.temperature * 10;            // 温度扩大10倍处理.
+    taskEXIT_CRITICAL();
 
     /* 每500ms周期更新一次. */
     vTaskDelay(pdMS_TO_TICKS(500));

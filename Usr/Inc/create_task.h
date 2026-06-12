@@ -17,7 +17,10 @@
   #define CUS_UART_CMD_TASK_PRIO                (7)
 
   #define CUS_KEY_TASK_DEEPTH                   (128)
-  #define CUS_KEY_TASK_PRIO                     (5)
+  #define CUS_KEY_TASK_PRIO                     (7)
+
+  #define CUS_MODBUS_TASK_DEEPTH                (512)
+  #define CUS_MODBUS_TASK_PRIO                  (6)
 /* ********************* Defines ********************* */
 
 

@@ -13,13 +13,18 @@
                 "e:\\aaasdl2test\\O2Proj\\STARTUP",
                 "e:\\aaasdl2test\\O2Proj\\RTE\\RTOS",
                 "e:\\aaasdl2test\\O2Proj\\RTE\\_Target_1",
+                "e:\\aaasdl2test\\O2Proj\\Driver\\Modbus\\include",
                 "e:\\aaasdl2test\\O2Proj\\Device\\STM32F407VET6",
                 "e:\\aaasdl2test\\O2Proj\\Driver\\HAL\\Src",
-                "e:\\aaasdl2test\\O2Proj\\Usr\\Src"
+                "e:\\aaasdl2test\\O2Proj\\Usr\\Src",
+                "e:\\aaasdl2test\\O2Proj\\Driver\\Modbus\\port",
+                "e:\\aaasdl2test\\O2Proj\\Driver\\Modbus\\source",
+                "e:\\aaasdl2test\\O2Proj\\Driver\\Modbus\\demo"
             ],
             "defines": [
                 "USE_HAL_DRIVER",
                 "STM32F407xx",
+                "NDEBUG",
                 "__alignof__(x)=",
                 "__asm(x)=",
                 "__asm__(x)=",
