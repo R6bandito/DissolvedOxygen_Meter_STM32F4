@@ -71,6 +71,7 @@ void calib_zero( void );
 void calib_air( void );
 uint16_t get_ADC_O2( void );
 uint16_t get_ADC_Temp( void );
+void get_CalibParam( uint16_t *o_ZeroAdc, uint16_t *o_AirAdc, float *o_AirSat, float *o_AirTemp );
 /* **************************************** */
 
 
@@ -220,6 +221,17 @@ void calib_sync( void )
   adc_calibParams.air_sat = REG_HOLD_BUF[4] / 100.0f;
   adc_calibParams.air_temp_c = REG_HOLD_BUF[5] / 10.0f;
 
+  taskEXIT_CRITICAL();
+}
+
+
+void get_CalibParam( uint16_t *o_ZeroAdc, uint16_t *o_AirAdc, float *o_AirSat, float *o_AirTemp )
+{
+  taskENTER_CRITICAL();
+  if ( o_ZeroAdc )    *o_ZeroAdc = adc_calibParams.zero_adc;
+  if ( o_AirAdc )     *o_AirAdc = adc_calibParams.air_adc;
+  if ( o_AirSat )     *o_AirSat = adc_calibParams.air_sat;
+  if ( o_AirTemp )    *o_AirTemp = adc_calibParams.air_temp_c;
   taskEXIT_CRITICAL();
 }
 

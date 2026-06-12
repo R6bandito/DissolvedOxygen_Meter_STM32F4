@@ -5,6 +5,7 @@
 #include "stm32f4xx_hal.h"
 #include "create_task.h"
 #include "debug_uart.h"
+#include "Cus_ST7789.h"
 #include "FreeRTOS.h"
 #include "task.h"
 

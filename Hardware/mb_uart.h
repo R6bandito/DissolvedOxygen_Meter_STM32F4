@@ -6,9 +6,9 @@
 
 
 /* ************* Defines ************* */
-  #define MB_UART_RX_TX_PORT        (GPIOD)
-  #define MB_UART_RX_PIN            (GPIO_PIN_9)
-  #define MB_UART_TX_PIN            (GPIO_PIN_8)
+  #define MB_UART_RX_TX_PORT        (GPIOC)
+  #define MB_UART_RX_PIN            (GPIO_PIN_11)
+  #define MB_UART_TX_PIN            (GPIO_PIN_10)
 /* ************* Defines ************* */
 
 

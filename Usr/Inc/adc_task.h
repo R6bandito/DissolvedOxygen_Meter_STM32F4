@@ -43,6 +43,9 @@ void calib_sync( void );
 /* 这两个API作为对外接口. 向外部输送经过滤波的最新ADC采集值. */
 uint16_t get_ADC_O2( void );
 uint16_t get_ADC_Temp( void );
+
+/* 该接口用于向外界提供校准参数读数. */
+void get_CalibParam( uint16_t *o_ZeroAdc, uint16_t *o_AirAdc, float *o_AirSat, float *o_AirTemp );
 /* **************************************** */
 
 #endif /* __ADC_TASK_H__ */

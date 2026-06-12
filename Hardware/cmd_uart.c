@@ -20,7 +20,7 @@ void UART2_Printf( const char *format, ... );
 void Cus_UART_Init( void )
 {
   /* 开时钟. */
-  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_USART2_CLK_ENABLE();
 
   /* GPIO配置. */

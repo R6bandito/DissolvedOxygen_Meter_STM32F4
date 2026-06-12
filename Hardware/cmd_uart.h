@@ -8,10 +8,10 @@
 
 
 /* ********************************* */
-  #define CMD_UART_TX_PORT          (GPIOD)
-  #define CMD_UART_RX_PORT          (GPIOD)
-  #define CMD_UART_TX_PIN           (GPIO_PIN_5)
-  #define CMD_UART_RX_PIN           (GPIO_PIN_6)
+  #define CMD_UART_TX_PORT          (GPIOA)
+  #define CMD_UART_RX_PORT          (GPIOA)
+  #define CMD_UART_TX_PIN           (GPIO_PIN_2)
+  #define CMD_UART_RX_PIN           (GPIO_PIN_3)
 /* ********************************* */
 
 /* ********************************* */

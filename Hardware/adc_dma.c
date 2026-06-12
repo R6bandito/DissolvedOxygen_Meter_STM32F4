@@ -68,7 +68,7 @@ void Cus_ADC_Init( void )
   HAL_ADC_ConfigChannel(&hadc1, &adc_channel1_O2);
 
   ADC_ChannelConfTypeDef adc_channel2_temp;
-  adc_channel2_temp.Channel           = ADC_CHANNEL_2;                          // ADC1_IN2.
+  adc_channel2_temp.Channel           = ADC_CHANNEL_4;                          // ADC1_IN4.
   adc_channel2_temp.Rank              = 2;
   adc_channel2_temp.SamplingTime      = ADC_SAMPLETIME_480CYCLES;
   HAL_ADC_ConfigChannel(&hadc1, &adc_channel2_temp);

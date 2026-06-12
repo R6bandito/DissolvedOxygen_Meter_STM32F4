@@ -6,6 +6,7 @@
 #include "do_data.h"
 #include "key.h"
 #include "key_task.h"
+#include "lcd_task.h"
 #include "mb_task.h"
 #include "mb.h"
 #include "semphr.h"
@@ -17,6 +18,7 @@ static TaskHandle_t Update_taskHandle;
 static TaskHandle_t UartCmd_taskHandle;
 static TaskHandle_t Key_taskHandle;
 static TaskHandle_t Modbus_taskHandle;
+static TaskHandle_t Lcd_taskHandle;
 /* *************************************** */
 
 /* *************************************** */
@@ -28,6 +30,7 @@ TaskHandle_t getUpdateTask_Handle( void );
 TaskHandle_t getUartCmdTask_Handle( void );
 TaskHandle_t getKeyTask_Handle( void );
 TaskHandle_t getModbusTask_Handle( void );
+TaskHandle_t getLcdTask_Handle( void );
 
 extern SemaphoreHandle_t xMutexUart2;
 extern QueueHandle_t doDataQueue;
@@ -71,6 +74,13 @@ static void createTask( void )
                                            NULL, 
                                            CUS_MODBUS_TASK_PRIO, 
                                            &Modbus_taskHandle );
+
+  BaseType_t pReturn_Lcd = xTaskCreate( cTask_Lcd, 
+                                        "lcd", 
+                                        CUS_LCD_TASK_DEEPTH, 
+                                        NULL, 
+                                        CUS_LCD_TASK_PRIO, 
+                                        &Lcd_taskHandle );
   
   if ( pReturn_ADC != pdPASS )
   {
@@ -93,6 +103,11 @@ static void createTask( void )
   }
 
   if ( pReturn_Modbus != pdPASS )
+  {
+    for( ; ; );
+  }
+
+  if ( pReturn_Lcd != pdPASS )
   {
     for( ; ; );
   }
@@ -175,5 +190,11 @@ TaskHandle_t getKeyTask_Handle( void )
 TaskHandle_t getModbusTask_Handle( void )
 {
   return Modbus_taskHandle;
+}
+
+
+TaskHandle_t getLcdTask_Handle( void )
+{
+  return Lcd_taskHandle;
 }
 

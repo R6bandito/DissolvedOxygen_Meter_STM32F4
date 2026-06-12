@@ -2,6 +2,7 @@
 
 /* *************************************** */
 TIM_HandleTypeDef htim6;
+
 void SystemClock_Config( void );
 HAL_StatusTypeDef HAL_InitTick( uint32_t TickPriority );
 /* *************************************** */

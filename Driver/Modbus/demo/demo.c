@@ -3,6 +3,10 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
+volatile TickType_t g_modbus_last_rx_tick;  // 最后一次通信tick.
+volatile uint32_t g_modbus_rx_count;        // Modbus通信接收计数器.
+volatile uint32_t g_modbus_tx_count;         // Modbus通信发送计数器.
+
 extern void calib_sync( void );
 
 // 十路保持寄存器
@@ -13,8 +17,12 @@ uint16_t REG_HOLD_BUF[REG_HOLD_SIZE];
 /// CMD6、3、16命令处理回调函数
 eMBErrorCode eMBRegHoldingCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usNRegs, eMBRegisterMode eMode )
 {
-    USHORT usRegIndex = usAddress - 1;
+    /* 通信心跳记录. */
+    g_modbus_last_rx_tick = xTaskGetTickCount();
+    g_modbus_rx_count++;
 
+    USHORT usRegIndex = usAddress - 1;
+    
     // 非法检测
     if((usRegIndex + usNRegs) > REG_HOLD_SIZE)
     {
@@ -48,6 +56,8 @@ eMBErrorCode eMBRegHoldingCB( UCHAR * pucRegBuffer, USHORT usAddress, USHORT usN
             usRegIndex++;
             usNRegs--;
         }
+
+        g_modbus_tx_count++;
     }
 
     return MB_ENOERR;

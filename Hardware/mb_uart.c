@@ -11,7 +11,7 @@ void HX_MB_GPIO_Init( void );
 
 void HX_MB_GPIO_Init( void )
 {
-  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
 
   GPIO_InitTypeDef InitStrucutre;
 

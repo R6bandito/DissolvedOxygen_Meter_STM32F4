@@ -20,7 +20,10 @@
   #define CUS_KEY_TASK_PRIO                     (7)
 
   #define CUS_MODBUS_TASK_DEEPTH                (512)
-  #define CUS_MODBUS_TASK_PRIO                  (6)
+  #define CUS_MODBUS_TASK_PRIO                  (8)
+
+  #define CUS_LCD_TASK_DEEPTH                   (256)
+  #define CUS_LCD_TASK_PRIO                     (4)
 /* ********************* Defines ********************* */
 
 
@@ -32,6 +35,7 @@ TaskHandle_t getADCTask_Handle( void );
 TaskHandle_t getUpdateTask_Handle( void );
 TaskHandle_t getUartCmdTask_Handle( void );
 TaskHandle_t getKeyTask_Handle( void );
+TaskHandle_t getLcdTask_Handle( void );
 /* ********************************************* */
 
 #endif /* __C_TASK_H__ */

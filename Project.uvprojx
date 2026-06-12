@@ -1429,6 +1429,46 @@
               <FileType>5</FileType>
               <FilePath>.\Driver\BSP\debug_uart.h</FilePath>
             </File>
+            <File>
+              <FileName>Cus_ST7789.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\BSP\Cus_ST7789.c</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_ST7789.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\BSP\Cus_ST7789.h</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_ST7789_commands.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\BSP\Cus_ST7789_commands.h</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_ST7789_font.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\BSP\Cus_ST7789_font.h</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_ST7789_port.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\BSP\Cus_ST7789_port.c</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_ST7789_port.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\BSP\Cus_ST7789_port.h</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_ST7789_port_stm32_fsmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\BSP\Cus_ST7789_port_stm32_fsmc.c</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_ST7789_port_stm32_fsmc.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\BSP\Cus_ST7789_port_stm32_fsmc.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1469,6 +1509,11 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\mb_task.h</FilePath>
             </File>
+            <File>
+              <FileName>lcd_task.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\lcd_task.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1508,6 +1553,11 @@
               <FileName>mb_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\mb_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>lcd_task.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\lcd_task.c</FilePath>
             </File>
           </Files>
         </Group>
