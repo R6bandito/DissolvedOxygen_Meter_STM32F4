@@ -2,6 +2,7 @@
 #include "do_data.h"
 #include "queue.h"
 #include <math.h>
+#include <string.h>
 
 
 /* ************************************ */
@@ -163,9 +164,17 @@ uint16_t get_ADC_Temp( void )
 
 void calib_zero( void )
 {
+  taskENTER_CRITICAL();
+
   /* 将零点命令时的滤波过后的ADC值存入校准参数结构体. */
   adc_calibParams.zero_adc = get_ADC_O2();
   REG_HOLD_BUF[2] = adc_calibParams.zero_adc;
+
+  /* 写入 BKPSRAM. */
+  CALIB_STORE_ZERO_ADC = adc_calibParams.zero_adc;
+  CALIB_STORE_ADDR_BASE = CALIB_STORE_MAGIC_ZERO;
+
+  taskEXIT_CRITICAL();
 }
 
 
@@ -193,6 +202,13 @@ void calib_air( void )
   REG_HOLD_BUF[3] = adc_calibParams.air_adc;
   REG_HOLD_BUF[4] = adc_calibParams.air_sat * 100;
   REG_HOLD_BUF[5] = adc_calibParams.air_temp_c * 10;
+
+  /* 写入BKPSRAM. */
+  CALIB_STORE_ADDR_BASE |= CALIB_STORE_MAGIC_AIR;
+  CALIB_STORE_AIR_ADC = adc_calibParams.air_adc;
+  memcpy((void *)&CALIB_STORE_AIR_SAT, &adc_calibParams.air_sat, 4);
+  memcpy((void *)&CALIB_STORE_AIR_TEMP, &adc_calibParams.air_temp_c, 4);
+
   taskEXIT_CRITICAL();
 }
 
@@ -200,15 +216,75 @@ void calib_air( void )
 void calib_defaultInit( void )
 {
   taskENTER_CRITICAL();
-  adc_calibParams.air_adc = CALIB_DEFAULT_AIR_ADC;
-  adc_calibParams.air_sat = CALIB_DEFAULT_AIR_SAT;
-  adc_calibParams.air_temp_c = CALIB_DEFAULT_AIR_TEMP;
-  adc_calibParams.zero_adc = CALIB_DEFAULT_ZERO_ADC;
 
-  REG_HOLD_BUF[2] = CALIB_DEFAULT_ZERO_ADC;
-  REG_HOLD_BUF[3] = CALIB_DEFAULT_AIR_ADC;
-  REG_HOLD_BUF[4] = CALIB_DEFAULT_AIR_SAT * 100;
-  REG_HOLD_BUF[5] = CALIB_DEFAULT_AIR_TEMP * 10;
+  /* 检查当前BKPSRAM中是否已经存储了有效校准参数. */
+  uint32_t magic = CALIB_STORE_ADDR_BASE;
+  int8_t is_zero_done = ((magic == CALIB_STORE_MAGIC_ZERO) || (magic == (CALIB_STORE_MAGIC_ZERO | CALIB_STORE_MAGIC_AIR)));
+  int8_t is_air_done = ((magic == CALIB_STORE_MAGIC_AIR) || (magic == (CALIB_STORE_MAGIC_ZERO | CALIB_STORE_MAGIC_AIR)));
+
+  if ( is_zero_done && is_air_done )
+  {
+    /* 完整校准状态. 校准参数有效. 直接读取全部校准参数. */
+    adc_calibParams.zero_adc = CALIB_STORE_ZERO_ADC;
+    adc_calibParams.air_adc = CALIB_STORE_AIR_ADC;
+
+    float sat;
+    memcpy(&sat, (void *)&CALIB_STORE_AIR_SAT, 4);
+    adc_calibParams.air_sat = sat;
+
+    float temp;
+    memcpy(&temp, (void *)&CALIB_STORE_AIR_TEMP, 4);
+    adc_calibParams.air_temp_c = temp;
+
+
+    REG_HOLD_BUF[2] = adc_calibParams.zero_adc;
+    REG_HOLD_BUF[3] = adc_calibParams.air_adc;
+    REG_HOLD_BUF[4] = adc_calibParams.air_sat * 100;
+    REG_HOLD_BUF[5] = adc_calibParams.air_temp_c * 10;
+  }
+
+  if ( is_zero_done )
+  {
+    /* 半校准状态(只校准了零点). */
+    adc_calibParams.zero_adc = (uint16_t)CALIB_STORE_ZERO_ADC;
+  }
+  else 
+  {
+    adc_calibParams.zero_adc = CALIB_DEFAULT_ZERO_ADC;
+  }
+
+  if ( is_air_done )
+  {
+    /* 半校准状态(只校准了空气状态). */
+    adc_calibParams.air_adc = (uint16_t)CALIB_STORE_AIR_ADC;
+
+    float sat;  memcpy(&sat,  (void *)&CALIB_STORE_AIR_SAT,  4);
+    float temp; memcpy(&temp, (void *)&CALIB_STORE_AIR_TEMP, 4);
+    adc_calibParams.air_sat    = sat;
+    adc_calibParams.air_temp_c = temp;
+  }
+  else
+  {
+    adc_calibParams.air_adc   = CALIB_DEFAULT_AIR_ADC;
+    adc_calibParams.air_sat   = CALIB_DEFAULT_AIR_SAT;
+    adc_calibParams.air_temp_c = CALIB_DEFAULT_AIR_TEMP;
+  }
+
+  if ( !is_air_done && !is_zero_done )
+  {
+    /* 校准参数无效. 清零 BKPSRAM. */
+    CALIB_STORE_ADDR_BASE    = 0;
+    CALIB_STORE_ZERO_ADC     = 0;
+    CALIB_STORE_AIR_ADC      = 0;
+    CALIB_STORE_AIR_SAT      = 0;
+    CALIB_STORE_AIR_TEMP     = 0;
+  }
+
+  REG_HOLD_BUF[2] = adc_calibParams.zero_adc;
+  REG_HOLD_BUF[3] = adc_calibParams.air_adc;
+  REG_HOLD_BUF[4] = adc_calibParams.air_sat * 100;
+  REG_HOLD_BUF[5] = adc_calibParams.air_temp_c * 10;
+
   taskEXIT_CRITICAL();
 }
 
@@ -216,10 +292,21 @@ void calib_defaultInit( void )
 void calib_sync( void )
 {
   taskENTER_CRITICAL();
+
+  /* Modbus 写回校准数据. 将其与当前全局校准数据结构体进行同步. */
   adc_calibParams.zero_adc = REG_HOLD_BUF[2];
   adc_calibParams.air_adc = REG_HOLD_BUF[3];
   adc_calibParams.air_sat = REG_HOLD_BUF[4] / 100.0f;
   adc_calibParams.air_temp_c = REG_HOLD_BUF[5] / 10.0f;
+
+  /* 更新BKPSRAM. */
+  CALIB_STORE_ZERO_ADC = adc_calibParams.zero_adc;
+  CALIB_STORE_AIR_ADC  = adc_calibParams.air_adc;
+  CALIB_STORE_ADDR_BASE    = CALIB_STORE_MAGIC_AIR | CALIB_STORE_MAGIC_ZERO;   
+
+  /* 防止浮点截断. 使用内存拷贝. */
+  memcpy((void *)&CALIB_STORE_AIR_SAT,  &adc_calibParams.air_sat, 4);
+  memcpy((void *)&CALIB_STORE_AIR_TEMP, &adc_calibParams.air_temp_c, 4);
 
   taskEXIT_CRITICAL();
 }

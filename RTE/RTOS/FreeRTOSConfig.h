@@ -104,7 +104,7 @@
 //  <i> Enable or disable stack overflow checking.
 //  <i> Callback function vApplicationStackOverflowHook implementation is required when stack checking is enabled.
 //  <i> Default: 0
-#define configCHECK_FOR_STACK_OVERFLOW            0
+#define configCHECK_FOR_STACK_OVERFLOW            2
 
 //  <q>Use idle hook
 //  <i> Enable callback function call on each idle task iteration.

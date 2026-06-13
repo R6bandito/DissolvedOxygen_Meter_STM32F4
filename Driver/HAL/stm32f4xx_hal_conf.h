@@ -58,7 +58,7 @@
 #define HAL_I2C_MODULE_ENABLED
 #define HAL_SMBUS_MODULE_ENABLED
 #define HAL_I2S_MODULE_ENABLED
-// #define HAL_IWDG_MODULE_ENABLED
+#define HAL_IWDG_MODULE_ENABLED
 #define HAL_LTDC_MODULE_ENABLED
 #define HAL_DSI_MODULE_ENABLED
 #define HAL_PWR_MODULE_ENABLED
@@ -476,6 +476,10 @@
 #ifdef HAL_MMC_MODULE_ENABLED
  #include "stm32f4xx_hal_mmc.h"
 #endif /* HAL_MMC_MODULE_ENABLED */
+
+#ifndef LSI_STARTUP_TIME
+	#define LSI_STARTUP_TIME  1000   
+#endif
 
 
 #define ATOMIC_SET_BIT(REG, BIT)                             \

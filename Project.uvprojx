@@ -1514,6 +1514,11 @@
               <FileType>5</FileType>
               <FilePath>.\Usr\Inc\lcd_task.h</FilePath>
             </File>
+            <File>
+              <FileName>task_guard.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Usr\Inc\task_guard.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1558,6 +1563,11 @@
               <FileName>lcd_task.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\Usr\Src\lcd_task.c</FilePath>
+            </File>
+            <File>
+              <FileName>task_guard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Usr\Src\task_guard.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1618,6 +1628,16 @@
               <FileName>mb_timer.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Hardware\mb_timer.h</FilePath>
+            </File>
+            <File>
+              <FileName>led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Hardware\led.c</FilePath>
+            </File>
+            <File>
+              <FileName>led.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Hardware\led.h</FilePath>
             </File>
           </Files>
         </Group>

@@ -21,6 +21,15 @@
   #define CALIB_DEFAULT_AIR_ADC       (1860)               // 9.08mg/L 对应的 ADC值.
   #define CALIB_DEFAULT_AIR_SAT       (9.08)               // 20度对应饱和溶解氧值.
   #define CALIB_DEFAULT_AIR_TEMP      (20)                 // 假设校准温度 20℃.
+
+  /* 以下是BKPSRAM的内存地址映射. 不要修改! */
+  #define CALIB_STORE_MAGIC_ZERO      (0x5A5A0000UL)
+  #define CALIB_STORE_MAGIC_AIR       (0x00005A5AUL)
+  #define CALIB_STORE_ADDR_BASE       *((volatile uint32_t *)0x40024000UL)
+  #define CALIB_STORE_ZERO_ADC        *((volatile uint32_t *)0x40024004UL)   
+  #define CALIB_STORE_AIR_ADC         *((volatile uint32_t *)0x40024008UL)   
+  #define CALIB_STORE_AIR_SAT         *((volatile uint32_t *)0x4002400CUL)
+  #define CALIB_STORE_AIR_TEMP        *((volatile uint32_t *)0x40024010UL)
 /* *************** Defins *************** */
 
 

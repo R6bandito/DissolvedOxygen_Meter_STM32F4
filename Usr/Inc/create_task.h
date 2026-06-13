@@ -2,6 +2,7 @@
 #define __C_TASK_H__
 
 
+#include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
 
@@ -24,6 +25,9 @@
 
   #define CUS_LCD_TASK_DEEPTH                   (256)
   #define CUS_LCD_TASK_PRIO                     (4)
+
+  #define CUS_GUARD_TASK_DEEPTH                 (128)
+  #define CUS_GUARD_TASK_PRIO                   (1)
 /* ********************* Defines ********************* */
 
 
@@ -36,6 +40,8 @@ TaskHandle_t getUpdateTask_Handle( void );
 TaskHandle_t getUartCmdTask_Handle( void );
 TaskHandle_t getKeyTask_Handle( void );
 TaskHandle_t getLcdTask_Handle( void );
+TaskHandle_t getModbusTask_Handle( void );
+TaskHandle_t getGuardTask_Handle( void );
 /* ********************************************* */
 
 #endif /* __C_TASK_H__ */

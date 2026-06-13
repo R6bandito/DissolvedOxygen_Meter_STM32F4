@@ -14,6 +14,7 @@ void Cus_ADC_SampleStart( void );
 void Cus_DMA_Init( void );
 
 static void HX_ADC_Init( void );
+static void HX_BKPSRAM_Init( void );          // 使能备份域SRAM. 将校准参数写入其中进行掉电保存.
 /* ****************** Decalre ***************** */
 
 
@@ -33,10 +34,26 @@ static void HX_ADC_Init( void )
 }
 
 
+static void HX_BKPSRAM_Init( void )
+{
+  /* 开 PWR 时钟. */
+  __HAL_RCC_PWR_CLK_ENABLE();
+
+  /* 使能 BKPSRAM 访问. */
+  HAL_PWR_EnableBkUpAccess();
+
+  /* 开 备份域SRAM 时钟. */
+  __HAL_RCC_BKPSRAM_CLK_ENABLE();
+}
+
+
 void Cus_ADC_Init( void )
 {
   /* ADC采样引脚初始化. */
   HX_ADC_Init();
+
+  /* BKPSRAM 初始化. */
+  HX_BKPSRAM_Init();
 
   /* 开ADC1时钟. */
   __HAL_RCC_ADC1_CLK_ENABLE();
