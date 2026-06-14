@@ -2,21 +2,26 @@
 #define __ADC_DMA_H__
 
 
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
 #include "stm32f4xx_hal.h"
+/* ═══════════════════════════════════════ */
 
 
-/* ****************** Defines ****************** */
-  #define CUS_ADC_O2_IN_PORT                   (GPIOA)             // 溶解氧信号采样通道 端口.
-  #define CUS_ADC_O2_IN_PIN                    (GPIO_PIN_1)        // 溶解氧信号采样通道 引脚.
+/* ═════════════════════════════════════════════════════════ */
+                        /* DEFINES */
+  /* 溶解氧信号采样通道端口，引脚映射. */
+  #define CUS_ADC_O2_IN_PORT                   (GPIOA)             
+  #define CUS_ADC_O2_IN_PIN                    (GPIO_PIN_1)        
 
-  #define CUS_ADC_TEMP_IN_PORT                 (GPIOA)             // NTC温度信号采样通道 端口.
-  #define CUS_ADC_TEMP_IN_PIN                  (GPIO_PIN_4)        // NTC温度信号采样通道 引脚.
+  /* 温度信号采样通道端口，引脚映射. */
+  #define CUS_ADC_TEMP_IN_PORT                 (GPIOA)             
+  #define CUS_ADC_TEMP_IN_PIN                  (GPIO_PIN_4)        
 
+  /* 信号在缓冲区中索引编号. */
   #define CUS_ADC_O2_INDEX                     (0)  
   #define CUS_ADC_TEMP_INDEX                   (1)
-
-  #define CUS_DMA2_STREAM4_PRIO                (8)
-/* ****************** Defines ****************** */
+/* ═════════════════════════════════════════════════════════ */
 
 
 

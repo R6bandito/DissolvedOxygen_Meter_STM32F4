@@ -1,23 +1,33 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
 #include "adc_dma.h"
+/* ═══════════════════════════════════════ */
 
 
-/* ****************** Global & Static ***************** */
+/* ═══════════════════════════════════════ */
+            /* 全局变量(本文件) */
+static uint16_t recvBuf[2];       // 双通道AD采集缓冲区.
 static ADC_HandleTypeDef hadc1;
 static DMA_HandleTypeDef hdma1;
+/* ═══════════════════════════════════════ */
 
-static uint16_t recvBuf[2];
-/* ****************** Global & Static ***************** */
-
-/* ****************** Decalre ***************** */
+/* ═══════════════════════════════════════ */
+              /* Public_API */
 void Cus_ADC_Init( void );
-void Cus_ADC_SampleStart( void );
 void Cus_DMA_Init( void );
+uint16_t Cus_getLatestO2( void );
+uint16_t Cus_getLatestTemp( void );
+void Cus_ADC_SampleStart( void );   // 启动 ADC+DMA 循环.
+/* ═══════════════════════════════════════ */
 
+
+/* ═══════════════════════════════════════ */
+              /* Static_API */
 static void HX_ADC_Init( void );
-static void HX_BKPSRAM_Init( void );          // 使能备份域SRAM. 将校准参数写入其中进行掉电保存.
-/* ****************** Decalre ***************** */
+/* ═══════════════════════════════════════ */
 
 
+/* ————————————————————————————— ADC_HX_Init ————————————————————————————— */
 static void HX_ADC_Init( void )
 {
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -34,26 +44,11 @@ static void HX_ADC_Init( void )
 }
 
 
-static void HX_BKPSRAM_Init( void )
-{
-  /* 开 PWR 时钟. */
-  __HAL_RCC_PWR_CLK_ENABLE();
-
-  /* 使能 BKPSRAM 访问. */
-  HAL_PWR_EnableBkUpAccess();
-
-  /* 开 备份域SRAM 时钟. */
-  __HAL_RCC_BKPSRAM_CLK_ENABLE();
-}
-
-
+/* ————————————————————————————— ADC_Init ————————————————————————————— */
 void Cus_ADC_Init( void )
 {
   /* ADC采样引脚初始化. */
   HX_ADC_Init();
-
-  /* BKPSRAM 初始化. */
-  HX_BKPSRAM_Init();
 
   /* 开ADC1时钟. */
   __HAL_RCC_ADC1_CLK_ENABLE();
@@ -95,6 +90,7 @@ void Cus_ADC_Init( void )
 }
 
 
+/* ————————————————————————————— DMA_Init ————————————————————————————— */
 void Cus_DMA_Init( void )
 {
   /* 开DMA时钟. */
@@ -118,6 +114,7 @@ void Cus_DMA_Init( void )
 }
 
 
+/* ————————————————————————————— ADC+DMA Start ————————————————————————————— */
 void Cus_ADC_SampleStart( void )
 {
   /* 启动ADC-DMA传输. */
@@ -125,6 +122,7 @@ void Cus_ADC_SampleStart( void )
 }
 
 
+/* ————————————————————————————— Raw Value Get ————————————————————————————— */
 uint16_t Cus_getLatestO2( void )
 {
   return recvBuf[CUS_ADC_O2_INDEX];

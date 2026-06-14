@@ -51,6 +51,5 @@
 #endif // __ATOMIC_MACROS_DEFINED__
 
 
-
 #endif 
 

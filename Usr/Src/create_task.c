@@ -1,5 +1,9 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
+#include "stm32f4xx_hal.h"
 #include "create_task.h"
 #include "adc_task.h"
+#include "adc_dma.h"
 #include "cmd_uart.h"
 #include "uart_cmd_task.h"
 #include "queue.h"
@@ -12,9 +16,11 @@
 #include "mb_task.h"
 #include "mb.h"
 #include "semphr.h"
+/* ═══════════════════════════════════════ */
 
 
-/* *************************************** */
+/* ═══════════════════════════════════════ */
+            /* 全局变量(本文件) */
 static TaskHandle_t ADC_taskHandle;
 static TaskHandle_t Update_taskHandle;
 static TaskHandle_t UartCmd_taskHandle;
@@ -23,13 +29,25 @@ static TaskHandle_t Modbus_taskHandle;
 static TaskHandle_t Lcd_taskHandle;
 static TaskHandle_t Guard_taskHandle;
 
-IWDG_HandleTypeDef hiwdg;     // 看门狗.
-/* *************************************** */
+static IWDG_HandleTypeDef hiwdg;     // 看门狗.
+/* ═══════════════════════════════════════ */
 
-/* *************************************** */
-void systemInit_Run( void );
-static void createTask( void );
 
+/* ═══════════════════════════════════════ */
+              /* 全局变量 */
+extern SemaphoreHandle_t xMutexUart2;
+extern QueueHandle_t doDataQueue;
+extern doData_t doData;
+/* ═══════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════ */
+              /* Public_API */
+void systemInit_Run( void );    // 系统初始化及其启动.(阻塞调用，不返回)
+
+void IWDG_Refresh( void );    // 对外提供喂狗通道(通过extern引用).
+
+/* 相关任务句柄外部获取通道. */
 TaskHandle_t getADCTask_Handle( void );
 TaskHandle_t getUpdateTask_Handle( void );
 TaskHandle_t getUartCmdTask_Handle( void );
@@ -37,13 +55,81 @@ TaskHandle_t getKeyTask_Handle( void );
 TaskHandle_t getModbusTask_Handle( void );
 TaskHandle_t getLcdTask_Handle( void );
 TaskHandle_t getGuardTask_Handle( void );
-
-extern SemaphoreHandle_t xMutexUart2;
-extern QueueHandle_t doDataQueue;
-extern doData_t doData;
-/* *************************************** */
+/* ═══════════════════════════════════════ */
 
 
+/* ═══════════════════════════════════════ */
+              /* Static_API */
+static void createTask( void );   // 任务创建(内部方法).
+/* ═══════════════════════════════════════ */
+
+
+/* ————————————————————————————— SystemInit ————————————————————————————— */
+void systemInit_Run( void )
+{
+  /* 数据结构初始化. */
+  doDataQueue = xQueueCreate(1, sizeof(doData_t));    // 覆写队列. 只保留最新值. 长度为1.
+  if ( doDataQueue == NULL )
+  {
+    /* 错误处理. 预留. */
+    for( ; ; );
+  }
+
+  xMutexUart2 = xSemaphoreCreateMutex();
+  if ( xMutexUart2 == NULL )
+  {
+    for( ; ; );
+  }
+
+  {
+    /* 指示灯初始化. 正常运行状态常亮. */
+    Cus_Debug_LED_Init();
+    runWrLEDSwitch(RUN_WR_LED_ON);
+
+    /* ADC初始化. */
+    Cus_ADC_Init();
+
+    /* 提供一个默认校准参数用于计算. */
+    calib_defaultInit();
+
+    /* DMA初始化. */
+    Cus_DMA_Init();
+
+    /* 上位机通信串口初始化. */
+    Cus_UART_Init();
+
+    /* 按键初始化. */
+    Cus_Key_Init();
+
+    /* 开始采样. */
+    Cus_ADC_SampleStart();
+
+    /* 串口中断接收开始. */
+    Cus_UART_StartTransfer();
+  }
+
+  /* 创建任务. */
+  createTask();
+
+  /* 初始化狗. */
+  hiwdg.Instance = IWDG;
+  hiwdg.Init.Prescaler = IWDG_PRESCALER_32;
+  hiwdg.Init.Reload = 2000;       // 2秒超时.
+  HAL_IWDG_Init(&hiwdg);
+
+  /* 开启任务调度. */
+  vTaskStartScheduler();
+}
+
+
+/* ————————————————————————————— IWDG_Feeder ————————————————————————————— */
+void IWDG_Refresh( void )
+{
+  HAL_IWDG_Refresh(&hiwdg);
+}
+
+
+/* ————————————————————————————— TaskCreate ————————————————————————————— */
 static void createTask( void )
 {
   BaseType_t pReturn_ADC =  xTaskCreate( cTask_ADC, 
@@ -132,63 +218,7 @@ static void createTask( void )
 }
 
 
-void systemInit_Run( void )
-{
-  /* 数据结构初始化. */
-  doDataQueue = xQueueCreate(1, sizeof(doData_t));    // 覆写队列. 只保留最新值. 长度为1.
-  if ( doDataQueue == NULL )
-  {
-    /* 错误处理. 预留. */
-    for( ; ; );
-  }
-
-  xMutexUart2 = xSemaphoreCreateMutex();
-  if ( xMutexUart2 == NULL )
-  {
-    for( ; ; );
-  }
-
-  {
-    /* 指示灯初始化. 正常运行状态常亮. */
-    Cus_Debug_LED_Init();
-    runWrLEDSwitch(RUN_WR_LED_ON);
-
-    /* ADC初始化. */
-    Cus_ADC_Init();
-
-    /* 提供一个默认校准参数用于计算. */
-    calib_defaultInit();
-
-    /* DMA初始化. */
-    Cus_DMA_Init();
-
-    /* 上位机通信串口初始化. */
-    Cus_UART_Init();
-
-    /* 按键初始化. */
-    Cus_Key_Init();
-
-    /* 开始采样. */
-    Cus_ADC_SampleStart();
-
-    /* 串口中断接收开始. */
-    Cus_UART_StartTransfer();
-  }
-
-  /* 创建任务. */
-  createTask();
-
-  /* 初始化狗. */
-  hiwdg.Instance = IWDG;
-  hiwdg.Init.Prescaler = IWDG_PRESCALER_32;
-  hiwdg.Init.Reload = 2000;       // 2秒超时.
-  HAL_IWDG_Init(&hiwdg);
-
-  /* 开启任务调度. */
-  vTaskStartScheduler();
-}
-
-
+/* ————————————————————————————— getXXXX_TaskHandle ————————————————————————————— */
 TaskHandle_t getADCTask_Handle( void )
 {
   return ADC_taskHandle;

@@ -1,13 +1,17 @@
 #ifndef __ADC_TASK_H__
 #define __ADC_TASK_H__
 
-#include "FreeRTOS.h"
-#include "task.h"
-#include "adc_dma.h"
+
+/* ═══════════════════════════════════════ */
+                /* INCLUDE */
+#include "stm32f4xx_hal.h"
+/* ═══════════════════════════════════════ */
 
 
-/* *************** Defins *************** */
-  #define FILTER_N                    (16)                // 平均滑动滤波缓冲区大小.
+/* ═════════════════════════════════════════════════════════ */
+                        /* DEFINES */
+  /* 平均滑动滤波缓冲区大小. */
+  #define FILTER_N                    (16)                
 
   /* 以下是NTC热敏电阻 B值法 计算公式参数. */
   #define NTC_R_PULL                  (10000.0f)          // NTC上拉电阻(10k).
@@ -30,10 +34,12 @@
   #define CALIB_STORE_AIR_ADC         *((volatile uint32_t *)0x40024008UL)   
   #define CALIB_STORE_AIR_SAT         *((volatile uint32_t *)0x4002400CUL)
   #define CALIB_STORE_AIR_TEMP        *((volatile uint32_t *)0x40024010UL)
-/* *************** Defins *************** */
+/* ═════════════════════════════════════════════════════════ */
 
 
-/* **************************************** */
+/* ═════════════════════════════════════════════════════════ */
+                      /* API_LIST */
+/* 任务API. */
 void cTask_ADC( void *parameter );
 void cTask_Update( void *parameter );
 
@@ -55,7 +61,7 @@ uint16_t get_ADC_Temp( void );
 
 /* 该接口用于向外界提供校准参数读数. */
 void get_CalibParam( uint16_t *o_ZeroAdc, uint16_t *o_AirAdc, float *o_AirSat, float *o_AirTemp );
-/* **************************************** */
+/* ═════════════════════════════════════════════════════════ */
 
 #endif /* __ADC_TASK_H__ */
 

@@ -1,16 +1,26 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
 #include "task_guard.h"
 #include "create_task.h"
 #include "cmd_uart.h"
 #include "led.h"
+/* ═══════════════════════════════════════ */
 
 
-/* ********************************* */
+/* ═══════════════════════════════════════ */
+            /* 全局变量(本文件) */
 static taskInfo_t taskInfoInstance[CTASK_TOTAL];
+/* ═══════════════════════════════════════ */
 
+
+/* ═══════════════════════════════════════ */
+              /* Public_API */
 void cTask_Guard( void *parameter );
-/* ********************************* */
+void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName );
+/* ═══════════════════════════════════════ */
 
 
+/* ————————————————————————————— Task ————————————————————————————— */
 /* 护卫任务. 间隔 3s 对所有任务进行一次巡检. */
 void cTask_Guard( void *parameter )
 {
@@ -64,7 +74,7 @@ void cTask_Guard( void *parameter )
 }
 
 
-
+/* ————————————————————————————— OVFW HOOK ————————————————————————————— */
 /* 任务栈空间溢出检测钩子. */
 void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
 {
@@ -73,6 +83,9 @@ void vApplicationStackOverflowHook( TaskHandle_t xTask, char *pcTaskName )
 
   static volatile const char *fault_task = NULL;
   fault_task = pcTaskName;
+
+  /* 断掉运行灯. */
+  runWrLEDSwitch(RUN_WR_LED_OFF);
 
   while(1) { __NOP(); }
 }

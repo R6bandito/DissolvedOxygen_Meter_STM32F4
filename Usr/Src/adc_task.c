@@ -1,11 +1,17 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
 #include "adc_task.h"
 #include "do_data.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "queue.h"
+#include "adc_dma.h"
 #include <math.h>
 #include <string.h>
+/* ═══════════════════════════════════════ */
 
 
-/* ************************************ */
+/* ═══════════════════════════════════════ */
 /* 饱和溶氧含量温度对照表. (0 - 40°) */
 static const float do_sat_table[41] = 
 {
@@ -18,10 +24,11 @@ static const float do_sat_table[41] =
    7.56,  7.44,  7.33,  7.22,  7.12,  // 30-34℃
    6.99,  6.88,  6.77,  6.66,  6.50   // 35-39℃, 40℃
 };
-/* ************************************ */
+/* ═══════════════════════════════════════ */
 
 
-/* ***************************************** */
+/* ═══════════════════════════════════════ */
+        /* 全局数据结构(本文件) */
 typedef struct 
 {
   const char *identify;           
@@ -32,8 +39,6 @@ typedef struct
   uint16_t filterBuffer[FILTER_N];      // 滤波采样缓冲区.
 
 } adc_Filter_t;
-static adc_Filter_t adc_FilterInstance_O2;          // O2滤波结构体.
-static adc_Filter_t adc_FilterInstance_Temp;        // Temp滤波结构体.
 
 typedef struct 
 {
@@ -43,39 +48,54 @@ typedef struct
   float air_temp_c;                                 // 空气校准时的温度.    
 
 } calibParams_t;
-calibParams_t adc_calibParams;                      // 全局校准参数.
-
-/* 数据队列相关. */
-QueueHandle_t doDataQueue;
-doData_t doData;
-
-/* Modbus 保持寄存器数组. */
-extern uint16_t REG_HOLD_BUF[6];
-/* ***************************************** */
-
-/* **************************************** */
-static void update_filter( adc_Filter_t *filter, uint16_t new_val );          // 平均滑动滤波更新.
-static uint16_t get_current_filter_average( adc_Filter_t *filter );           // 获取当前最新的滤波数据.
-static float ADC_temp_convert2C( uint16_t adc_val );                          // 将ADC模拟量转换为温度(摄氏度).
-/* **************************************** */
-
-/* **************************************** */
-void cTask_ADC( void *parameter );
-
-/* 该任务使用平均滑动滤波定期更新采样数据. */
-void cTask_Update( void *parameter );
+/* ═══════════════════════════════════════ */
 
 
+/* ═══════════════════════════════════════ */
+            /* 全局变量(本文件) */
+static adc_Filter_t adc_FilterInstance_O2;          // O2滤波结构体.
+static adc_Filter_t adc_FilterInstance_Temp;        // Temp滤波结构体.
+/* ═══════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════ */
+            /* 全局变量 */
+QueueHandle_t doDataQueue;              // 数据队列.
+doData_t doData;                        // 队列数据项.
+calibParams_t adc_calibParams;          // 全局校准参数.
+
+extern uint16_t REG_HOLD_BUF[6];        // Modbus 保持寄存器数组. 
+/* ═══════════════════════════════════════ */
+
+
+/* ═══════════════════════════════════════════════════ */
+                    /* Public_API */
+/* Task任务API. */
+void cTask_ADC( void *parameter );        // 该任务进行数据处理及转发.
+void cTask_Update( void *parameter );     // 该任务使用平均滑动滤波定期更新采样数据.
+
+/* 校准相关. */
 void calib_sync( void );            
 void calib_defaultInit( void );
 void calib_zero( void );
 void calib_air( void );
+
+/* 外部获取平均滑动滤波后的ADC数值.及当前校准参数. */
 uint16_t get_ADC_O2( void );
 uint16_t get_ADC_Temp( void );
 void get_CalibParam( uint16_t *o_ZeroAdc, uint16_t *o_AirAdc, float *o_AirSat, float *o_AirTemp );
-/* **************************************** */
+/* ═══════════════════════════════════════════════════ */
 
 
+/* ═══════════════════════════════════════════════════ */
+                    /* Static_API */
+static void update_filter( adc_Filter_t *filter, uint16_t new_val );          // 平均滑动滤波更新.
+static uint16_t get_current_filter_average( adc_Filter_t *filter );           // 获取当前最新的滤波数据.
+static float ADC_temp_convert2C( uint16_t adc_val );                          // 将ADC模拟量转换为温度(摄氏度).
+/* ═══════════════════════════════════════════════════ */
+
+
+/* ————————————————————————————— Update_Filter & Get Processed Data ————————————————————————————— */
 static void update_filter( adc_Filter_t *filter, uint16_t new_val )
 {
   if ( !filter )    return;
@@ -133,6 +153,7 @@ static uint16_t get_current_filter_average( adc_Filter_t *filter )
 }
 
 
+/* ————————————————————————————— ADC_Temp 2 C ————————————————————————————— */
 static float ADC_temp_convert2C( uint16_t adc_val )
 {
   /* 采用B值法将ADC采集的NTC热敏电阻模块输出模拟量转换为摄氏度. */
@@ -162,6 +183,7 @@ uint16_t get_ADC_Temp( void )
 }
 
 
+/* ————————————————————————————— Calib Relevant ————————————————————————————— */
 void calib_zero( void )
 {
   taskENTER_CRITICAL();
@@ -172,7 +194,7 @@ void calib_zero( void )
 
   /* 写入 BKPSRAM. */
   CALIB_STORE_ZERO_ADC = adc_calibParams.zero_adc;
-  CALIB_STORE_ADDR_BASE = CALIB_STORE_MAGIC_ZERO;
+  CALIB_STORE_ADDR_BASE |= CALIB_STORE_MAGIC_ZERO;
 
   taskEXIT_CRITICAL();
 }
@@ -323,6 +345,7 @@ void get_CalibParam( uint16_t *o_ZeroAdc, uint16_t *o_AirAdc, float *o_AirSat, f
 }
 
 
+/* ————————————————————————————— Task ————————————————————————————— */
 void cTask_ADC( void *parameter )
 {
   

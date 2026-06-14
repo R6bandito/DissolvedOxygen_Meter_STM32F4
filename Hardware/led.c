@@ -1,13 +1,17 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
 #include "led.h"
+/* ═══════════════════════════════════════ */
 
 
+/* ═══════════════════════════════════════ */
+              /* Public_API */
+void Cus_Debug_LED_Init( void );        //初始化. 
+void runWrLEDSwitch( uint8_t EN_DIS );  // 开关.
+/* ═══════════════════════════════════════ */
 
-/* **************************** */
-void Cus_Debug_LED_Init( void );
-void runWrLEDSwitch( uint8_t EN_DIS );
-/* **************************** */
 
-
+/* ————————————————————————————— Init ————————————————————————————— */
 void Cus_Debug_LED_Init( void )
 {
   __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -24,6 +28,7 @@ void Cus_Debug_LED_Init( void )
 }
 
 
+/* ————————————————————————————— Switch ————————————————————————————— */
 void runWrLEDSwitch( uint8_t EN_DIS )
 {
   HAL_GPIO_WritePin(RUN_WR_LED_PORT, RUN_WR_LED_PIN, (GPIO_PinState)EN_DIS);

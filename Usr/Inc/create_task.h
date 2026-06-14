@@ -2,19 +2,23 @@
 #define __C_TASK_H__
 
 
-#include "stm32f4xx_hal.h"
+/* ═══════════════════════════════════════ */
+                /* INCLUDE */
 #include "FreeRTOS.h"
 #include "task.h"
+/* ═══════════════════════════════════════ */
 
 
-/* ********************* Defines ********************* */
+/* ═════════════════════════════════════════════════════════ */
+                        /* DEFINES */
+  /* 任务堆栈及优先级设置. */
   #define CUS_ADC_TASK_DEEPTH                   (128)
   #define CUS_ADC_TASK_PRIO                     (5)
 
   #define CUS_UPDATE_TASK_DEEPTH                (128)
   #define CUS_UPDATE_TASK_PRIO                  (6)
 
-  #define CUS_UART_CMD_TASK_DEEPTH              (128)
+  #define CUS_UART_CMD_TASK_DEEPTH              (256)
   #define CUS_UART_CMD_TASK_PRIO                (7)
 
   #define CUS_KEY_TASK_DEEPTH                   (128)
@@ -28,13 +32,14 @@
 
   #define CUS_GUARD_TASK_DEEPTH                 (128)
   #define CUS_GUARD_TASK_PRIO                   (1)
-/* ********************* Defines ********************* */
+/* ═════════════════════════════════════════════════════════ */
 
 
-/* ********************************************* */
-void systemInit_Run( void );
+/* ═════════════════════════════════════════════════════════ */
+                      /* API_LIST */
+void systemInit_Run( void );    // 系统初始化及其启动.(阻塞调用，不返回)
 
-/* 句柄获取方法. */
+/* 各任务句柄获取对外通道. */
 TaskHandle_t getADCTask_Handle( void );
 TaskHandle_t getUpdateTask_Handle( void );
 TaskHandle_t getUartCmdTask_Handle( void );
@@ -42,6 +47,6 @@ TaskHandle_t getKeyTask_Handle( void );
 TaskHandle_t getLcdTask_Handle( void );
 TaskHandle_t getModbusTask_Handle( void );
 TaskHandle_t getGuardTask_Handle( void );
-/* ********************************************* */
+/* ═════════════════════════════════════════════════════════ */
 
 #endif /* __C_TASK_H__ */

@@ -1,12 +1,18 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
 #include "uart_cmd_task.h"
 #include "cmd_uart.h"
 #include "adc_task.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "queue.h"
 #include "do_data.h"
 #include <string.h>
+/* ═══════════════════════════════════════ */
 
 
-/* ************************************ */
+/* ═══════════════════════════════════════ */
+              /* 全局变量 */
 uint8_t cmd_buf[CMD_BUFFER_SIZE];                // 串口命令缓冲区.
 
 const char *cmd_list[CMD_LIST_SIZE] = 
@@ -18,14 +24,17 @@ const char *cmd_list[CMD_LIST_SIZE] =
   "HELP"                                         // 帮助(命令帮助页).
 };
 
-
 extern QueueHandle_t doDataQueue;
+/* ═══════════════════════════════════════ */
 
-/* Declare */
+
+/* ═══════════════════════════════════════ */
+              /* Public_API */
 void cTask_UartCmdTask( void *pramater );
-/* ************************************ */
+/* ═══════════════════════════════════════ */
 
 
+/* ————————————————————————————— Task ————————————————————————————— */
 void cTask_UartCmdTask( void *pramater )
 {
   static doData_t rcv_data = { 0 };
@@ -83,10 +92,13 @@ void cTask_UartCmdTask( void *pramater )
     }
     else if ( strcmp((const char *)cmd_buf, cmd_list[RESET_CALIB_CMD_INDEX]) == 0 )
     {
+      taskENTER_CRITICAL();
+      /* 重置位于BKP SRAM中的魔数. */
+      CALIB_STORE_ADDR_BASE = 0;
+
       /* 恢复默认校准参数. */
       calib_defaultInit();
-
-      /* 删除位于BKP SRAM中的保存校准参数(预留) */
+      taskEXIT_CRITICAL();
 
       UART2_Printf("CALIB Params has been Reset!\n");
 

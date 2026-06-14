@@ -1,31 +1,49 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
 #include "lcd_task.h"
 #include "Cus_ST7789.h"
 #include "do_data.h"
 #include "adc_task.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "queue.h"
 #include <stdio.h>
+/* ═══════════════════════════════════════ */
 
 
-/* ***************************** */
-static tftDevice_HandleTypeDef st7789;
+/* ═══════════════════════════════════════ */
+            /* 全局变量(本文件) */
 static doData_t rcvData; 
+static tftDevice_HandleTypeDef st7789;
+/* ═══════════════════════════════════════ */
 
+
+/* ═══════════════════════════════════════ */
+              /* 全局变量 */
 extern QueueHandle_t doDataQueue;
-extern volatile TickType_t g_modbus_last_rx_tick;  // 最后一次通信tick.
-extern volatile uint32_t g_modbus_rx_count;        // Modbus通信接收计数器.
+extern volatile TickType_t g_modbus_last_rx_tick;   // 最后一次通信tick.
+extern volatile uint32_t g_modbus_rx_count;         // Modbus通信接收计数器.
 extern volatile uint32_t g_modbus_tx_count;         // Modbus通信发送计数器.
+/* ═══════════════════════════════════════ */
 
-extern IWDG_HandleTypeDef hiwdg;
 
+/* ═══════════════════════════════════════ */
+              /* Public_API */
 void cTask_Lcd( void *parameter );
+extern void IWDG_Refresh(void);
+/* ═══════════════════════════════════════ */
 
+
+/* ═══════════════════════════════════════ */
+              /* Static_API */
 static void Lcd_DisplayStaticElement( void );         // 显示静态元素.
 static void Lcd_DisplayUpdate( doData_t ucData );     // 动态元素刷新显示.
 static void Lcd_DisplayStatus( void );                // 状态显示.
 static void Lcd_DisplaySystime( void );               // 系统运行时长显示.
-/* ***************************** */
+/* ═══════════════════════════════════════ */
 
 
+/* ————————————————————————————— Static Element ————————————————————————————— */
 static void Lcd_DisplayStaticElement( void )
 {
   /* 显示大标题. */
@@ -50,29 +68,30 @@ static void Lcd_DisplayStaticElement( void )
 }
 
 
+/* ————————————————————————————— Dynamic Element ————————————————————————————— */
 static void Lcd_DisplayUpdate( doData_t ucData )
 {
   char buffer[32];
   uint16_t air_adc, zero_adc;
   float air_sat, air_temp;
 
-  sprintf(buffer, "%.2f mg/L", ucData.dissolved_oxygen);
+  sprintf(buffer, "%5.2f mg/L", ucData.dissolved_oxygen);
   st7789.lcd_drawString(&st7789, 55, 48, buffer, CUS_FONT_SIZE_16, COLOR_VALUE, COLOR_BG);
 
-  sprintf(buffer, "%.1f C", ucData.temperature);
+  sprintf(buffer, "%5.1f C", ucData.temperature);
   st7789.lcd_drawString(&st7789, 55, 78, buffer, CUS_FONT_SIZE_16, COLOR_VALUE, COLOR_BG);
 
   get_CalibParam(&zero_adc, &air_adc, &air_sat, &air_temp);
-  sprintf(buffer, "%u", zero_adc);
+  sprintf(buffer, "%-5u", zero_adc);
   st7789.lcd_drawString(&st7789, 125, 125, buffer, CUS_FONT_SIZE_12, COLOR_SEC_VALUE, COLOR_BG);
   
-  sprintf(buffer, "%u", air_adc);
+  sprintf(buffer, "%-5u", air_adc);
   st7789.lcd_drawString(&st7789, 120, 145, buffer, CUS_FONT_SIZE_12, COLOR_SEC_VALUE, COLOR_BG);
 
-  sprintf(buffer, "%.2f mg/L", air_sat);
+  sprintf(buffer, "%4.2f mg/L", air_sat);
   st7789.lcd_drawString(&st7789, 120, 165, buffer, CUS_FONT_SIZE_12, COLOR_SEC_VALUE, COLOR_BG);
 
-  sprintf(buffer, "%.1f C", air_temp);
+  sprintf(buffer, "%4.1f C", air_temp);
   st7789.lcd_drawString(&st7789, 125, 185, buffer, CUS_FONT_SIZE_12, COLOR_SEC_VALUE, COLOR_BG);
 }
 
@@ -112,6 +131,7 @@ static void Lcd_DisplaySystime( void )
 }
 
 
+/* ————————————————————————————— Task ————————————————————————————— */
 void cTask_Lcd( void *parameter )
 {
   Cus_ST7789_InitHandle(&st7789);
@@ -131,7 +151,7 @@ void cTask_Lcd( void *parameter )
     Lcd_DisplaySystime();
 
     /* 喂狗. */
-    HAL_IWDG_Refresh(&hiwdg);
+    IWDG_Refresh();
 
     vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(500));
   }

@@ -1,15 +1,29 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
 #include "key_task.h"
-#include "queue.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "adc_task.h"
 #include "cmd_uart.h"
+#include "stm32f4xx_hal.h"
+/* ═══════════════════════════════════════ */
 
 
-/* *********************************** */
+/* ═══════════════════════════════════════ */
+              /* 全局变量 */
 volatile uint8_t g_zeroKey_Event;           // 零点校准按键事件到达.
 volatile uint8_t g_airKey_Event;            // 空气校准按键事件到达.
-/* *********************************** */
+/* ═══════════════════════════════════════ */
 
 
+/* ═══════════════════════════════════════ */
+              /* Public_API */
+void cTask_Key( void *parameter );
+/* ═══════════════════════════════════════ */
+
+
+
+/* ————————————————————————————— Task ————————————————————————————— */
 void cTask_Key( void *parameter )
 {
   static TickType_t last_press_tick = 0;

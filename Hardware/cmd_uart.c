@@ -1,22 +1,32 @@
+/* ═══════════════════════════════════════ */
+              /* INCLUDE */
+#include "stm32f4xx_hal.h"
 #include "cmd_uart.h"
+#include "FreeRTOS.h"
+#include "task.h"
 #include "semphr.h"
 #include <stdarg.h>
 #include <stdio.h>
+/* ═══════════════════════════════════════ */
 
-/* **************************** */
+
+/* ═══════════════════════════════════════ */
+              /* 全局变量 */
 uint8_t uart_rcvByte = 0;
 UART_HandleTypeDef huart_cmd;
 SemaphoreHandle_t xMutexUart2;
-/* **************************** */
+/* ═══════════════════════════════════════ */
 
 
-/* **************************** */
+/* ═══════════════════════════════════════ */
+              /* Public_API */
 void Cus_UART_Init( void );
 void Cus_UART_StartTransfer( void );
 void UART2_Printf( const char *format, ... );
-/* **************************** */
+/* ═══════════════════════════════════════ */
 
 
+/* ————————————————————————————— CMD_UART_Init & Transfer  ————————————————————————————— */
 void Cus_UART_Init( void )
 {
   /* 开时钟. */
@@ -30,12 +40,12 @@ void Cus_UART_Init( void )
   GPIO_InitStructure.Pin              = CMD_UART_TX_PIN;
   GPIO_InitStructure.Pull             = GPIO_PULLUP;
   GPIO_InitStructure.Speed            = GPIO_SPEED_FREQ_HIGH;
-  HAL_GPIO_Init(CMD_UART_TX_PORT, &GPIO_InitStructure);
+  HAL_GPIO_Init(CMD_UART_TX_RX_PORT, &GPIO_InitStructure);
 
   GPIO_InitStructure.Alternate        = GPIO_AF7_USART2;
   GPIO_InitStructure.Mode             = GPIO_MODE_AF_PP;
   GPIO_InitStructure.Pin              = CMD_UART_RX_PIN;
-  HAL_GPIO_Init(CMD_UART_RX_PORT, &GPIO_InitStructure);
+  HAL_GPIO_Init(CMD_UART_TX_RX_PORT, &GPIO_InitStructure);
 
   /* UART 配置. */
   huart_cmd.Instance                     = USART2;
@@ -60,6 +70,7 @@ void Cus_UART_StartTransfer( void )
 }
 
 
+/* ————————————————————————————— Printf  ————————————————————————————— */
 void UART2_Printf( const char *format, ... )
 {
   /* 获取互斥量. */
