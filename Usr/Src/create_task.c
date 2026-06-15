@@ -4,8 +4,10 @@
 #include "create_task.h"
 #include "adc_task.h"
 #include "adc_dma.h"
+#include "soft_iic.h"
 #include "cmd_uart.h"
 #include "uart_cmd_task.h"
+#include "Cus_Utils_delay.h"
 #include "queue.h"
 #include "do_data.h"
 #include "key.h"
@@ -86,14 +88,22 @@ void systemInit_Run( void )
     Cus_Debug_LED_Init();
     runWrLEDSwitch(RUN_WR_LED_ON);
 
+    /* 初始化计时. */
+    Cus_delay_init(SystemCoreClock);
+
+#if (USE_ADC_12BIT)
     /* ADC初始化. */
     Cus_ADC_Init();
 
-    /* 提供一个默认校准参数用于计算. */
-    calib_defaultInit();
-
     /* DMA初始化. */
     Cus_DMA_Init();
+#elif (USE_ADC_EXT_16BIT)
+    /* 初始化Soft I2C. 用于16位AD通信 */
+    Cus_SoftI2C_Init();
+#endif 
+
+    /* 提供一个默认校准参数用于计算. */
+    calib_defaultInit();
 
     /* 上位机通信串口初始化. */
     Cus_UART_Init();
@@ -101,8 +111,10 @@ void systemInit_Run( void )
     /* 按键初始化. */
     Cus_Key_Init();
 
+#if (USE_ADC_12BIT)
     /* 开始采样. */
     Cus_ADC_SampleStart();
+#endif 
 
     /* 串口中断接收开始. */
     Cus_UART_StartTransfer();

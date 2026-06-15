@@ -1469,6 +1469,26 @@
               <FileType>5</FileType>
               <FilePath>.\Driver\BSP\Cus_ST7789_port_stm32_fsmc.h</FilePath>
             </File>
+            <File>
+              <FileName>soft_iic.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\BSP\soft_iic.c</FilePath>
+            </File>
+            <File>
+              <FileName>soft_iic.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\BSP\soft_iic.h</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_Utils_delay.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Driver\BSP\Cus_Utils_delay.h</FilePath>
+            </File>
+            <File>
+              <FileName>Cus_Utils_delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\Driver\BSP\Cus_Utils_delay.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
