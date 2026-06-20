@@ -39,6 +39,8 @@ static IWDG_HandleTypeDef hiwdg;     // 看门狗.
               /* 全局变量 */
 extern SemaphoreHandle_t xMutexUart2;
 extern QueueHandle_t doDataQueue;
+extern QueueHandle_t g_keyEventQueue;     // 按键事件队列.
+extern QueueHandle_t g_menuEventQueue;    // 菜单操作事件队列.
 extern doData_t doData;
 /* ═══════════════════════════════════════ */
 
@@ -74,6 +76,18 @@ void systemInit_Run( void )
   if ( doDataQueue == NULL )
   {
     /* 错误处理. 预留. */
+    for( ; ; );
+  }
+
+  g_keyEventQueue = xQueueCreate(10, sizeof(uint8_t));
+  if ( g_keyEventQueue == NULL )
+  {
+    for( ; ; );
+  }
+
+  g_menuEventQueue = xQueueCreate(10, sizeof(menuEvent_t));
+  if ( g_keyEventQueue == NULL )
+  {
     for( ; ; );
   }
 

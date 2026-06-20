@@ -23,14 +23,18 @@
 #include "stm32f4xx_it.h"
 #include "uart_cmd_task.h"
 #include "key.h"
+#include "key_task.h"
 #include <string.h>
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+
 
 extern TIM_HandleTypeDef htim6;
 extern UART_HandleTypeDef huart_cmd; 
 extern uint8_t uart_rcvByte;                              // 串口接收字节.
 extern uint8_t cmd_buf[CMD_BUFFER_SIZE];                  // 串口命令缓冲区.
-extern volatile uint8_t g_zeroKey_Event;           // 零点校准按键事件到达.
-extern volatile uint8_t g_airKey_Event;            // 空气校准按键事件到达.
+extern QueueHandle_t g_keyEventQueue;                     // 按键事件队列.
 
 extern TaskHandle_t getUartCmdTask_Handle( void );
 extern void Cus_UART_StartTransfer( void );
@@ -53,36 +57,199 @@ void HAL_TIM_PeriodElapsedCallback( TIM_HandleTypeDef *htim )
 }
 
 
+void EXTI0_IRQHandler( void )
+{
+  static TickType_t exti0_LastWakeUpTick = 0;
+  static uint8_t guard = 0;               // 确保LastWakeUp在一次按下与释放周期（两次中断进入）中，只被更新第一次.
+  static uint8_t pressPinLevel_1 = 1;     // 第一次采样电平记录. (该按键默认复位为高电平)
+  static uint8_t pressPinLevel_2 = 1;     // 第二次采样电平记录.
+  static TickType_t lastValidTick = 0;    // 该Tick用于滤除抖动.
+
+  /* KEY3. */
+  if ( __HAL_GPIO_EXTI_GET_IT(CALIB_RESET_KEY_PIN) != RESET )
+  {
+    /* 先清中断标志. */
+    __HAL_GPIO_EXTI_CLEAR_IT(CALIB_RESET_KEY_PIN);
+
+    /* 非阻塞滤抖动. */
+    TickType_t currentTick = xTaskGetTickCountFromISR();
+    if ( currentTick - lastValidTick < pdMS_TO_TICKS(30) )
+    {
+      return;
+    }
+    lastValidTick = currentTick;
+
+    if ( !guard )
+    {
+      /* 记录时间戳. */
+      exti0_LastWakeUpTick = xTaskGetTickCountFromISR();
+      guard = 1;
+
+      /* 采集当前电平状态. */
+      pressPinLevel_1 = (uint8_t)HAL_GPIO_ReadPin(CALIB_RESET_KEY_PORT, CALIB_RESET_KEY_PIN);
+    }
+    else 
+    {
+      /* 第二次采样电平. */
+      pressPinLevel_2 = (uint8_t)HAL_GPIO_ReadPin(CALIB_RESET_KEY_PORT, CALIB_RESET_KEY_PIN);
+
+      TickType_t during = xTaskGetTickCountFromISR() - exti0_LastWakeUpTick ;
+
+      if ( (during < pdMS_TO_TICKS(LONG_PRESS_IDENTIFY_MS)) && (pressPinLevel_1 != pressPinLevel_2) )
+      {
+        /* 短按. */
+        /* 通知按键短按事件到达. */
+        uint8_t eve = KEY3_SHORT_PRESS;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(g_keyEventQueue, &eve, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
+      else if ( during >= pdMS_TO_TICKS(LONG_PRESS_IDENTIFY_MS) )
+      {
+        /* 通知按键长按事件到达. */
+        uint8_t eve = KEY3_LONG_PRESS;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(g_keyEventQueue, &eve, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
+
+      /* 更新时间戳. 恢复状态. */
+      exti0_LastWakeUpTick = xTaskGetTickCountFromISR();
+      guard = 0;
+      pressPinLevel_1 = 1;
+      pressPinLevel_2 = 1;
+    }
+  }
+}
+
+
 void EXTI4_IRQHandler( void )
 {
+  static TickType_t exti4_LastWakeUpTick = 0;
+  static uint8_t guard = 0;               // 确保LastWakeUp在一次按下与释放周期（两次中断进入）中，只被更新第一次.
+  static uint8_t pressPinLevel_1 = 1;     // 第一次采样电平记录. (该按键默认复位为高电平)
+  static uint8_t pressPinLevel_2 = 1;     // 第二次采样电平记录.
+  static TickType_t lastValidTick = 0;    // 该Tick用于滤除抖动.
+
   /* 零点校准. */
   if ( __HAL_GPIO_EXTI_GET_IT(CALIB_ZERO_KEY_PIN) != RESET )
   {
     /* 先清中断标志. */
     __HAL_GPIO_EXTI_CLEAR_IT(CALIB_ZERO_KEY_PIN);
 
-    /* 通知按键事件到达. */
-    g_zeroKey_Event = 1;
-    
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR(getKeyTask_Handle(), &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    /* 非阻塞滤抖动. */
+    TickType_t currentTick = xTaskGetTickCountFromISR();
+    if ( currentTick - lastValidTick < pdMS_TO_TICKS(30) )
+    {
+      return;
+    }
+    lastValidTick = currentTick;
+
+    if ( !guard )
+    {
+      /* 记录时间戳. */
+      exti4_LastWakeUpTick = xTaskGetTickCountFromISR();
+      guard = 1;
+
+      /* 采集当前电平状态. */
+      pressPinLevel_1 = (uint8_t)HAL_GPIO_ReadPin(CALIB_ZERO_KEY_PORT, CALIB_ZERO_KEY_PIN);
+    }
+    else 
+    {
+      /* 第二次采样电平. */
+      pressPinLevel_2 = (uint8_t)HAL_GPIO_ReadPin(CALIB_ZERO_KEY_PORT, CALIB_ZERO_KEY_PIN);
+
+      TickType_t during = xTaskGetTickCountFromISR() - exti4_LastWakeUpTick ;
+
+      if ( (during < pdMS_TO_TICKS(LONG_PRESS_IDENTIFY_MS)) && (pressPinLevel_1 != pressPinLevel_2) )
+      {
+        /* 短按. */
+        /* 通知按键短按事件到达. */
+        uint8_t eve = KEY1_SHORT_PRESS;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(g_keyEventQueue, &eve, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
+      else if ( during >= pdMS_TO_TICKS(LONG_PRESS_IDENTIFY_MS) )
+      {
+        /* 通知按键长按事件到达. */
+        uint8_t eve = KEY1_LONG_PRESS;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(g_keyEventQueue, &eve, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
+
+      /* 更新时间戳. 恢复状态. */
+      exti4_LastWakeUpTick = xTaskGetTickCountFromISR();
+      guard = 0;
+      pressPinLevel_1 = 1;
+      pressPinLevel_2 = 1;
+    }
   }
 }
 
 
 void EXTI3_IRQHandler( void )
 {
-  /* 空气校准. */
+  static TickType_t exti3_LastWakeUpTick = 0;
+  static uint8_t guard = 0;               
+  static uint8_t pressPinLevel_1 = 1;     
+  static uint8_t pressPinLevel_2 = 1;     
+  static TickType_t lastValidTick = 0;    
+
+  /* KEY2. */
   if ( __HAL_GPIO_EXTI_GET_IT(CALIB_AIR_KEY_PIN) != RESET )
   {
     __HAL_GPIO_EXTI_CLEAR_IT(CALIB_AIR_KEY_PIN);
 
-    g_airKey_Event = 1;
+    /* 非阻塞滤抖动. */
+    TickType_t currentTick = xTaskGetTickCountFromISR();
+    if ( currentTick - lastValidTick < pdMS_TO_TICKS(30) )
+    {
+      return;
+    }
+    lastValidTick = currentTick;
 
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    vTaskNotifyGiveFromISR(getKeyTask_Handle(), &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    if ( !guard )
+    {
+      /* 记录时间戳. */
+      exti3_LastWakeUpTick = xTaskGetTickCountFromISR();
+      guard = 1;
+
+      /* 采集当前电平状态. */
+      pressPinLevel_1 = (uint8_t)HAL_GPIO_ReadPin(CALIB_AIR_KEY_PORT, CALIB_AIR_KEY_PIN);
+    }
+    else 
+    {
+      /* 第二次采样电平. */
+      pressPinLevel_2 = (uint8_t)HAL_GPIO_ReadPin(CALIB_AIR_KEY_PORT, CALIB_AIR_KEY_PIN);
+
+      TickType_t during = xTaskGetTickCountFromISR() - exti3_LastWakeUpTick ;
+
+      if ( (during < pdMS_TO_TICKS(LONG_PRESS_IDENTIFY_MS)) && (pressPinLevel_1 != pressPinLevel_2) )
+      {
+        /* 短按. */
+        /* 通知按键短按事件到达. */
+        uint8_t eve = KEY2_SHORT_PRESS;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(g_keyEventQueue, &eve, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
+      else if ( during >= pdMS_TO_TICKS(LONG_PRESS_IDENTIFY_MS) )
+      {
+        /* 通知按键长按事件到达. */
+        uint8_t eve = KEY2_LONG_PRESS;
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        xQueueSendFromISR(g_keyEventQueue,&eve, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+      }
+
+      /* 更新时间戳. 恢复状态. */
+      exti3_LastWakeUpTick = xTaskGetTickCountFromISR();
+      guard = 0;
+      pressPinLevel_1 = 1;
+      pressPinLevel_2 = 1;
+    }
   }
 }
 

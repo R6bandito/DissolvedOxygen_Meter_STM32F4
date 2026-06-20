@@ -1,8 +1,10 @@
 /* ═══════════════════════════════════════ */
               /* INCLUDE */
 #include "key_task.h"
+#include "lcd_task.h"
 #include "FreeRTOS.h"
 #include "task.h"
+#include "queue.h"
 #include "adc_task.h"
 #include "cmd_uart.h"
 #include "stm32f4xx_hal.h"
@@ -11,8 +13,10 @@
 
 /* ═══════════════════════════════════════ */
               /* 全局变量 */
-volatile uint8_t g_zeroKey_Event;           // 零点校准按键事件到达.
-volatile uint8_t g_airKey_Event;            // 空气校准按键事件到达.
+/* 按键事件队列.  (0=短按KEY1 1=短按KEY2 2=短按KEY3 3=长按KEY1 4=长按KEY2 5=长按KEY3) */
+QueueHandle_t g_keyEventQueue;              
+extern QueueHandle_t g_menuEventQueue;    // 菜单事件队列.
+extern uint8_t is_Menu;                   // 标志位. 判断当前是否处于菜单.
 /* ═══════════════════════════════════════ */
 
 
@@ -26,43 +30,72 @@ void cTask_Key( void *parameter );
 /* ————————————————————————————— Task ————————————————————————————— */
 void cTask_Key( void *parameter )
 {
-  static TickType_t last_press_tick = 0;
+  uint8_t keyEvent;   // 按键事件.
 
   while(1)
   {
-    /* 永久阻塞直到获取信号. */
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    /* 永久阻塞直到获取到事件. */
+    xQueueReceive(g_keyEventQueue, &keyEvent, portMAX_DELAY);
 
-    /* 获取信号量后. 消抖. */
-    TickType_t now = xTaskGetTickCount();
-    if ( now - last_press_tick > pdMS_TO_TICKS(100) )
+    switch (keyEvent)
     {
-      last_press_tick = now;
-
-      if ( g_zeroKey_Event )
+      case KEY1_SHORT_PRESS:
       {
         /* 零点校准. */
-        UART2_Printf("ZERO_CALIB Trigger.\n");
-
         calib_zero();
-
-        UART2_Printf("CALIB Sample OK!\n");
-
-        /* 清除事件. */
-        g_zeroKey_Event = 0;
+        break;
       }
-      
-      if ( g_airKey_Event )
+
+      case KEY2_SHORT_PRESS:
       {
         /* 空气校准. */
-        UART2_Printf("AIR_CALIB Trigger.");
-
-        calib_air();
-
-        UART2_Printf("AIR_CALIB Sample OK!\n");
-
-        g_airKey_Event = 0;
+        if ( is_Menu )
+        {
+          /* 当前处于菜单状态. */
+          menuEvent_t Event = MENU_NEXT;
+          xQueueSend(g_menuEventQueue, &Event, portMAX_DELAY);
+        }
+        else 
+        {
+          /* 普通模式. 空气校准. */
+          calib_air();
+        }
+        
+        break;
       }
+
+      case KEY3_SHORT_PRESS:
+      {
+        taskENTER_CRITICAL();
+        /* 重置位于BKP SRAM中的魔数. */
+        CALIB_STORE_ADDR_BASE = 0;
+
+        /* 重置校准参数. */
+        calib_defaultInit();
+        taskEXIT_CRITICAL();
+
+        break;
+      }
+
+      case KEY1_LONG_PRESS:
+      {
+        menuEvent_t Event = MENU_MAIN;
+        xQueueSend(g_menuEventQueue, &Event, portMAX_DELAY);
+        break;
+      }
+
+      case KEY2_LONG_PRESS:
+      {
+ 
+      }
+
+      case KEY3_LONG_PRESS:
+      {
+
+        break;
+      }
+
+      default:  break;
     }
   }
 }

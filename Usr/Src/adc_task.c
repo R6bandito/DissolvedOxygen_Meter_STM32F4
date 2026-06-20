@@ -258,11 +258,7 @@ void calib_defaultInit( void )
     memcpy(&temp, (void *)&CALIB_STORE_AIR_TEMP, 4);
     adc_calibParams.air_temp_c = temp;
 
-
-    REG_HOLD_BUF[2] = adc_calibParams.zero_adc;
-    REG_HOLD_BUF[3] = adc_calibParams.air_adc;
-    REG_HOLD_BUF[4] = adc_calibParams.air_sat * 100;
-    REG_HOLD_BUF[5] = adc_calibParams.air_temp_c * 10;
+    goto END;
   }
 
   if ( is_zero_done )
@@ -302,6 +298,7 @@ void calib_defaultInit( void )
     CALIB_STORE_AIR_TEMP     = 0;
   }
 
+END:
   REG_HOLD_BUF[2] = adc_calibParams.zero_adc;
   REG_HOLD_BUF[3] = adc_calibParams.air_adc;
   REG_HOLD_BUF[4] = adc_calibParams.air_sat * 100;
@@ -316,14 +313,14 @@ void calib_sync( void )
   taskENTER_CRITICAL();
 
   /* Modbus 写回校准数据. 将其与当前全局校准数据结构体进行同步. */
-  adc_calibParams.zero_adc = REG_HOLD_BUF[2];
-  adc_calibParams.air_adc = REG_HOLD_BUF[3];
-  adc_calibParams.air_sat = REG_HOLD_BUF[4] / 100.0f;
-  adc_calibParams.air_temp_c = REG_HOLD_BUF[5] / 10.0f;
+  adc_calibParams.zero_adc    = REG_HOLD_BUF[2];
+  adc_calibParams.air_adc     = REG_HOLD_BUF[3];
+  adc_calibParams.air_sat     = REG_HOLD_BUF[4] / 100.0f;
+  adc_calibParams.air_temp_c  = REG_HOLD_BUF[5] / 10.0f;
 
   /* 更新BKPSRAM. */
-  CALIB_STORE_ZERO_ADC = adc_calibParams.zero_adc;
-  CALIB_STORE_AIR_ADC  = adc_calibParams.air_adc;
+  CALIB_STORE_ZERO_ADC     = adc_calibParams.zero_adc;
+  CALIB_STORE_AIR_ADC      = adc_calibParams.air_adc;
   CALIB_STORE_ADDR_BASE    = CALIB_STORE_MAGIC_AIR | CALIB_STORE_MAGIC_ZERO;   
 
   /* 防止浮点截断. 使用内存拷贝. */
