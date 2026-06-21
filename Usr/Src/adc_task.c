@@ -79,6 +79,7 @@ void calib_sync( void );
 void calib_defaultInit( void );
 void calib_zero( void );
 void calib_air( void );
+void calib_manual_set( uint8_t item, uint32_t value_int, float value_float );
 
 /* 外部获取平均滑动滤波后的ADC数值.及当前校准参数. */
 uint16_t get_ADC_O2( void );
@@ -338,6 +339,65 @@ void get_CalibParam( uint16_t *o_ZeroAdc, uint16_t *o_AirAdc, float *o_AirSat, f
   if ( o_AirAdc )     *o_AirAdc = adc_calibParams.air_adc;
   if ( o_AirSat )     *o_AirSat = adc_calibParams.air_sat;
   if ( o_AirTemp )    *o_AirTemp = adc_calibParams.air_temp_c;
+  taskEXIT_CRITICAL();
+}
+
+
+void calib_manual_set( uint8_t item, uint32_t value_int, float value_float )
+{
+  taskENTER_CRITICAL();
+
+  switch (item)
+  {
+    case 0:
+    {
+      (void)value_float;
+
+      /* 同步零点ADC数据. */
+      adc_calibParams.zero_adc  = value_int;
+      CALIB_STORE_ZERO_ADC      = value_int;
+      CALIB_STORE_ADDR_BASE     |= CALIB_STORE_MAGIC_ZERO;
+      REG_HOLD_BUF[2]           = adc_calibParams.zero_adc;
+      break;
+    }
+
+    case 1:
+    {
+      (void)value_float;
+
+      /* 同步空气ADC数据. */
+      adc_calibParams.air_adc    = value_int;
+      CALIB_STORE_AIR_ADC        = value_int;
+      CALIB_STORE_ADDR_BASE      |= CALIB_STORE_MAGIC_AIR;
+      REG_HOLD_BUF[3]            = adc_calibParams.air_adc;
+      break;
+    }
+
+    case 2:
+    {
+      (void)value_int;
+
+      /* 同步空气SAT数据. */
+      adc_calibParams.air_sat     = value_float;
+      memcpy((void *)&CALIB_STORE_AIR_SAT,  &adc_calibParams.air_sat, 4);
+      CALIB_STORE_ADDR_BASE       |= CALIB_STORE_MAGIC_AIR;
+      REG_HOLD_BUF[4]             = (uint16_t)adc_calibParams.air_sat * 100;
+      break;
+    }
+
+    case 3:
+    {
+      (void)value_int;
+      adc_calibParams.air_temp_c   = value_float;
+      memcpy((void *)&CALIB_STORE_AIR_TEMP, &adc_calibParams.air_temp_c, 4);
+      CALIB_STORE_ADDR_BASE        |= CALIB_STORE_MAGIC_AIR;
+      REG_HOLD_BUF[5]              = (uint16_t)adc_calibParams.air_temp_c * 10;
+      break;
+    }
+
+    default:  break;
+  }
+
   taskEXIT_CRITICAL();
 }
 

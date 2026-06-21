@@ -55,6 +55,9 @@ void calib_defaultInit( void );
 /* 该方法为同步函数供Modbus HoldingCB调用. 用于同步写入的校准参数. */
 void calib_sync( void );
 
+/* 子菜单设定单个校准参数. 自动同步 BKPSRAM + REG_HOLD + 魔数. */
+void calib_manual_set( uint8_t item, uint32_t value_int, float value_float );
+
 /* 这两个API作为对外接口. 向外部输送经过滤波的最新ADC采集值. */
 uint16_t get_ADC_O2( void );
 uint16_t get_ADC_Temp( void );

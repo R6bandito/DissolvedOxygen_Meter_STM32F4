@@ -27,6 +27,7 @@ typedef enum
 {
   MENU_MAIN = 0,                  // 主菜单.
   MENU_NEXT,                      // 下一项.
+  MENU_PREV,                      // 上一项.
   MENU_ENTER,                     // 确认.
 
 } menuEvent_t;

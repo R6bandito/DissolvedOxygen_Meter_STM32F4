@@ -41,8 +41,18 @@ void cTask_Key( void *parameter )
     {
       case KEY1_SHORT_PRESS:
       {
-        /* 零点校准. */
-        calib_zero();
+        if ( is_Menu )
+        {
+          /* 当前处于菜单状态. 短按响应prev. */
+          menuEvent_t Event = MENU_PREV;
+          xQueueSend(g_menuEventQueue, &Event, portMAX_DELAY);
+        }
+        else 
+        {
+          /* 零点校准. */
+          calib_zero();
+        }
+
         break;
       }
 
@@ -51,7 +61,7 @@ void cTask_Key( void *parameter )
         /* 空气校准. */
         if ( is_Menu )
         {
-          /* 当前处于菜单状态. */
+          /* 当前处于菜单状态. 短按响应Next. */
           menuEvent_t Event = MENU_NEXT;
           xQueueSend(g_menuEventQueue, &Event, portMAX_DELAY);
         }
@@ -66,13 +76,20 @@ void cTask_Key( void *parameter )
 
       case KEY3_SHORT_PRESS:
       {
-        taskENTER_CRITICAL();
-        /* 重置位于BKP SRAM中的魔数. */
-        CALIB_STORE_ADDR_BASE = 0;
-
-        /* 重置校准参数. */
-        calib_defaultInit();
-        taskEXIT_CRITICAL();
+        if ( is_Menu )
+        {
+          /* 菜单模式下作为确认按键转发. */
+          menuEvent_t Event = MENU_ENTER;
+          xQueueSend(g_menuEventQueue, &Event, portMAX_DELAY);
+        }
+        else 
+        {
+          /* 重置位于BKP SRAM中的魔数. */
+          CALIB_STORE_ADDR_BASE = 0;
+  
+          /* 重置校准参数. */
+          calib_defaultInit();
+        }
 
         break;
       }
