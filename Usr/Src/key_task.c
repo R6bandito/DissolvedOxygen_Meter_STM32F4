@@ -104,10 +104,16 @@ void cTask_Key( void *parameter )
       case KEY2_LONG_PRESS:
       {
  
+        break;
       }
 
       case KEY3_LONG_PRESS:
       {
+        if ( is_Menu )
+        {
+          menuEvent_t Event = MENU_DIGTAL_SWITCH;
+          xQueueSend(g_menuEventQueue, &Event, portMAX_DELAY);
+        }
 
         break;
       }

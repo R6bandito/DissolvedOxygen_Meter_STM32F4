@@ -7,6 +7,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+#include "adc_dma.h"  
 #include <stdio.h>
 #include <string.h>
 /* ═══════════════════════════════════════ */
@@ -59,8 +60,32 @@ static void Lcd_drawSonMenu( uint8_t pg_id );
 
 /* 子菜单动态显示组件. 内部显示动态元素且无限阻塞直到用户正确设定并确认. */
 static void waitUserInput( uint8_t pg_id, const char *def );
+
+/* 辅助API. 用于计算字符步进量. */
+static uint32_t calcStep( const char *str, uint8_t digital );
 /* ═══════════════════════════════════════ */
 
+
+
+/* 计算步进量：当前编辑位到最右侧的有效数字位数 */
+static uint32_t calcStep( const char *str, uint8_t digital )
+{
+  int len = (int)strlen(str);
+  int pos = len - 1 - digital;       // 字符串中的实际下标
+  int rightDigits = 0;
+
+  /* 统计从当前位往右、非 '.' 的字符数 */
+  for( int i = pos + 1; i < len; i++ )
+  {
+    if (str[i] != '.')  rightDigits++;
+  }
+
+  /* 指数运算. */
+  uint32_t step = 1;
+  for( int i = 0; i < rightDigits; i++ )  step *= 10;
+
+  return step;
+}
 
 /* ————————————————————————————— Static Element ————————————————————————————— */
 static void Lcd_DisplayStaticElement( void )
@@ -289,10 +314,35 @@ static void waitUserInput( uint8_t pg_id, const char *def )
   /* 菜单事件. */
   uint8_t menuEvent;
 
+  uint8_t digital = 0;       // 当前显示数位(默认为最小位.即个位(对于整数),十分位或百分位(对于浮点数)).
+
+  /* 门控参数. 用于限制仅在第一次绘制或发生改变时进行绘制. 防止反复刷新造成可能的闪屏以及浪费CPU性能. */
+  char lastStr[16] = "";
+  uint8_t lastDigital = 0xFF;
+  uint8_t is_FirstDraw = 1;
+
   while(1)
   {
-    /* 显示当前值 */
-    st7789.lcd_drawString(&st7789, 80, 80, currentStr, CUS_FONT_SIZE_32, COLOR_VALUE, COLOR_BG);
+    if ( is_FirstDraw || strcmp(lastStr, currentStr) != 0 || digital != lastDigital )
+    {
+      /* 计算当前编辑位的 x 坐标(用于反色选中的修改位.) */
+      int charWidth  = 16;   // 32号字体每字符 16px
+      int strLen     = (int)strlen(currentStr);
+      int digit_x    = 80 + (strLen - 1 - digital) * charWidth;  // 从右数第 digital 位
+      int digit_y    = 80;
+      char single[2] = { currentStr[strLen - 1 - digital], '\0' };
+
+      /* 显示当前值 */
+      st7789.lcd_drawString(&st7789, 80, 80, currentStr, CUS_FONT_SIZE_32, COLOR_VALUE, COLOR_BG);
+
+      /* 覆盖由digital选中的修改位(反色). */
+      st7789.lcd_drawString(&st7789, digit_x, digit_y, single, CUS_FONT_SIZE_32, COLOR_BG, COLOR_VALUE);
+
+      /* 更新门控参数. */
+      lastDigital = digital;
+      is_FirstDraw = 0;
+      memcpy(lastStr, currentStr, sizeof(currentStr));
+    }
 
     if ( xQueueReceive(g_menuEventQueue, &menuEvent, pdMS_TO_TICKS(100)) == pdPASS )
     {
@@ -312,7 +362,8 @@ static void waitUserInput( uint8_t pg_id, const char *def )
           {
             /* 整数值++. */
             uint32_t value = atoi(currentStr);
-            value++;
+            uint32_t step = calcStep(currentStr, digital);    // 获取步进量.
+            value += step;
             if ( pg_id <= 1 && value > UINT16_MAX )   value = UINT16_MAX;
             sprintf(currentStr, "%5u",(uint16_t)value);
           }
@@ -320,7 +371,12 @@ static void waitUserInput( uint8_t pg_id, const char *def )
           {
             /* 浮点操作. */
             float fv = (float)atof(currentStr);
-            fv += (pg_id == 2) ? 0.01f : 0.1f;    // 浮点步进.
+            uint32_t scale = (pg_id == 2) ? 100 : 10;   // SAT×100, Temp×10
+            uint32_t fv_e = (uint32_t)(fv * scale + 0.5f);   // 将SAT扩大100倍. 转为无符号整型进行处理.
+            uint32_t step = calcStep(currentStr, digital);    // 获取步进量.
+            fv_e += step;
+
+            fv = (float)fv_e / scale;   // 重新换为浮点数.
             sprintf(currentStr, (pg_id == 2) ? "%5.2f" : "%5.1f", fv);
           }
 
@@ -333,14 +389,20 @@ static void waitUserInput( uint8_t pg_id, const char *def )
           if ( pg_id <= 1 )
           {
             uint32_t value = atoi(currentStr);
-            value--;
+            uint32_t step = calcStep(currentStr, digital);    // 获取步进量.
+            value -= step;
             if ( pg_id <= 1 && value > UINT16_MAX )   value = UINT16_MAX;
             sprintf(currentStr, "%5u", (uint16_t)value);
           }
           else 
           {
             float fv = (float)atof(currentStr);
-            fv -= (pg_id == 2) ? 0.01f : 0.1f;    // 浮点步进.
+            uint32_t scale = (pg_id == 2) ? 100 : 10;   // SAT×100, Temp×10
+            uint32_t fv_e = (uint32_t)(fv * scale + 0.5f);
+            uint32_t step = calcStep(currentStr, digital);    // 获取步进量.
+            fv_e -= step;
+
+            fv = (float)fv_e / scale;
             sprintf(currentStr, (pg_id == 2) ? "%5.2f" : "%5.1f", fv);
           }
 
@@ -360,6 +422,33 @@ static void waitUserInput( uint8_t pg_id, const char *def )
             default:  break;
           }
           return;   // 直接返回.
+        }
+
+        case MENU_DIGTAL_SWITCH:
+        {
+          do
+          {
+            /* 切换加减数位. */
+            digital++;
+            if ( pg_id <= 1 && digital > ((USE_ADC_12BIT) ? (4 - 1) : (5 - 1)) )
+            {
+              /* ZeroADC与AirADC为无符号整型. 数据宽度取决于ADC分辨率. */
+              digital = 0;
+            }
+            else if ( pg_id == 2 && digital >= 5 )
+            {
+              /* AirSAT浮点类型. 最大5位宽度. XXX.XX */
+              digital = 0;
+            }
+            else if ( pg_id == 3 && digital > 4 )
+            {
+              /* AirTemp为浮点类型. 最大4位宽度. XXX.X */
+              digital = 0;
+            }
+
+          } while( pg_id >= 2 && (currentStr[(int)strlen(currentStr) - 1 - digital] == '.') || (currentStr[(int)strlen(currentStr) - 1 - digital] == ' ') );
+
+          break;
         }
 
         default:  break;

@@ -29,6 +29,7 @@ typedef enum
   MENU_NEXT,                      // 下一项.
   MENU_PREV,                      // 上一项.
   MENU_ENTER,                     // 确认.
+  MENU_DIGTAL_SWITCH,             // 切换数位.
 
 } menuEvent_t;
 /* ═════════════════════════════════════════════════════════ */
